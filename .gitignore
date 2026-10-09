@@ -1,0 +1,5 @@
+# Installer backups of locked files (Install_PhysiclHubBrowser.ms renames them to *.old_<time>)
+*.old_*
+# 3ds Max autobackups / temp files from testing
+*.bak
+*.tmp
