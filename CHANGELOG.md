@@ -4,7 +4,7 @@
 
 - Placeholder tabs Grass, Buildings, Textures ("Coming soon"; Hub folders to be added later).
 - Toolbar category renamed to PHYSICL.
-- After an import the status line shows what was imported and whether it succeeded.
+- Every import ends with one window saying what was imported (objects, textures, missing textures) or why it failed.
 
 ## 1.0
 

@@ -12,7 +12,6 @@ global PHB_mainRollout
 global PHB_cache
 if PHB_cache == undefined do PHB_cache = #()
 global PHB_loginRollout
-global PHB_importResult = "" -- one-line outcome of the last import, shown in the dialog
 
 -- ============================
 -- IMPORT
@@ -68,28 +67,26 @@ fn PHB_localizeTextures objs packageDir = (
     #(copiedDst.count, missing)
 )
 
+-- One window per import: this on failure, the summary at the end of PHB_importBackground on success
+fn PHB_importFailed title reason = (
+    messageBox ("Import failed: " + title + "\n" + reason) title:"Physicl Hub Browser"
+    false
+)
+
 fn PHB_importBackground item = (
     local title = item[1]
-    PHB_importResult = "Import failed: " + title
-    if maxFilePath == "" do (
-        PHB_importResult += " (scene not saved)"
-        messageBox "Please save the scene first: textures are copied next to the .max file." title:"Scene Not Saved"
-        return false
-    )
+    if maxFilePath == "" do
+        return PHB_importFailed title "Please save the scene first: textures are copied next to the .max file."
 
     progressStart ("Downloading " + title + "...")
     local dir = PHB_kh.getPackage title item[3]
     progressEnd()
-    if dir == undefined do (
-        messageBox ("Could not get " + title + ":\n" + PHB_kh.lastError) title:"Physicl Hub Browser"
-        return false
-    )
+    if dir == undefined do
+        return PHB_importFailed title PHB_kh.lastError
 
     local maxFiles = PHB_kh.findFiles dir "*.max"
-    if maxFiles.count == 0 do (
-        messageBox ("The package for " + title + " has no .max file.") title:"Physicl Hub Browser"
-        return false
-    )
+    if maxFiles.count == 0 do
+        return PHB_importFailed title "The package has no .max file."
     local maxFile = maxFiles[1]
     for f in maxFiles where matchPattern (getFilenameFile f) pattern:(title + "*") do (maxFile = f; exit)
 
@@ -101,26 +98,25 @@ fn PHB_importBackground item = (
     try (
         mergeMAXFile maxFile toMerge #select #autoRenameDups
     ) catch (
-        messageBox ("Error importing " + title + ":\n" +getCurrentException()) title:"Physicl Hub Browser"
-        return false
+        return PHB_importFailed title (getCurrentException())
     )
     local objs = selection as array
-    if objs.count == 0 do return false
+    if objs.count == 0 do
+        return PHB_importFailed title "No objects were merged from the package."
 
     local tex = PHB_localizeTextures objs dir
     local missing = tex[2]
-    if missing.count > 0 do (
-        local msg = "Imported " + title + ", but these textures were not found:\n"
-        for m in missing do msg += m + "\n"
-        messageBox msg title:"Physicl Hub Browser"
-    )
     -- Leave the imported object(s) selected so they can be placed right away
     select (for o in objs where isValidNode o collect o)
     completeRedraw()
     format "Physicl Hub Browser: imported % (% objects)\n" title objs.count
-    PHB_importResult = "Imported: " + title + " (" + objs.count as string + " objects, " + tex[1] as string + " textures"
-    if missing.count > 0 do PHB_importResult += ", " + missing.count as string + " missing"
-    PHB_importResult += ")"
+
+    local msg = "Imported: " + title + "\n" + objs.count as string + " objects, " + tex[1] as string + " textures"
+    if missing.count > 0 do (
+        msg += "\n\nThese textures were not found:\n"
+        for m in missing do msg += m + "\n"
+    )
+    messageBox msg title:"Physicl Hub Browser"
     true
 )
 
@@ -214,8 +210,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
     group "Knowledge Hub Library" (
         dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:640 height:450 align:#center
     )
-    -- Item count, or the result of the last import (wraps to two lines for long titles)
-    label lblStatus "" pos:[20,520] width:215 height:30
+    label lblStatus "" pos:[20,535] width:200
     button btnRefresh "Refresh" pos:[20,552] width:80 height:26
     button btnImport "IMPORT SELECTED" width:200 height:40 pos:[240,540]
     button btnLogout "Sign out" pos:[580,552] width:80 height:26
@@ -320,9 +315,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
             return false
         )
         local idx = (lvBackgrounds.SelectedItems.Item[0]).Index + 1
-        local result = PHB_importBackground PHB_items[idx]
-        lblStatus.text = PHB_importResult
-        result
+        PHB_importBackground PHB_items[idx]
     )
 
     on PHB_mainRollout open do (
