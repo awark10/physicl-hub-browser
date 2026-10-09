@@ -12,7 +12,7 @@ and continues from there as a separate project.
 
 | File | Role |
 |---|---|
-| `PhysiclHubBrowser.mcr` | macroScript `PhysiclHubBrowser` (category `Physicl`, "Hub Browser") — loads the two files below and opens the dialog |
+| `PhysiclHubBrowser.mcr` | macroScript `PhysiclHubBrowser` (category `PHYSICL`, "Hub Browser") — loads the two files below and opens the dialog |
 | `PHB_Client.ms` | Knowledge Hub client — login, session cookie, card list, Drive downloads, cache, JSON reader |
 | `PHB_UI.ms` | Login dialog, gallery dialog (BACKPLATES / DECALS / GRASS / BUILDINGS / TEXTURES tabs), import (merge + texture copy & relink) |
 | `Install_PhysiclHubBrowser.ms` | Installer — copies the three files into `userMacros`, reloads the macro live |
@@ -40,7 +40,7 @@ and continues from there as a separate project.
 ## Installation
 
 Run `Install_PhysiclHubBrowser.ms` via Scripting → Run Script. Then Customize → Customize User
-Interface → Toolbars → category `Physicl` → drag "Hub Browser" to a toolbar. A Knowledge Hub
+Interface → Toolbars → category `PHYSICL` → drag "Hub Browser" to a toolbar. A Knowledge Hub
 account is required.
 
 The installer only writes its own files; an existing Backrounder / Physicl Asset Browser install

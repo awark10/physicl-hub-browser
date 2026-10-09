@@ -1,5 +1,5 @@
 macroScript PhysiclHubBrowser
-category:"Physicl"
+category:"PHYSICL"
 tooltip:"Physicl Hub Browser: backplates and decals from the Knowledge Hub"
 buttontext:"Hub Browser"
 (

@@ -98,7 +98,7 @@
         messageBox ("Physicl Hub Browser " + version + " successfully installed!\n\n" + \
                    "Script available in:\n" + \
                    "Customize → Customize User Interface → Toolbars\n" + \
-                   "Category: Physicl\n\n" + \
+                   "Category: PHYSICL\n\n" + \
                    "All resources copied to: " + userMacroDir) \
                    title:"Installation and Setup" beep:false
     )
