@@ -12,6 +12,7 @@ global PHB_mainRollout
 global PHB_cache
 if PHB_cache == undefined do PHB_cache = #()
 global PHB_loginRollout
+global PHB_importResult = "" -- one-line outcome of the last import, shown in the dialog
 
 -- ============================
 -- IMPORT
@@ -19,6 +20,7 @@ global PHB_loginRollout
 
 -- Copies every bitmap the merged objects use into <scene folder>\textures\ as
 -- <sceneName>-<original file name> and relinks the maps to the copies.
+-- Returns #(number of textures copied, names of textures not found)
 fn PHB_localizeTextures objs packageDir = (
     local dstDir = maxFilePath + "textures\\"
     if not doesDirectoryExist dstDir do makeDir dstDir
@@ -63,12 +65,14 @@ fn PHB_localizeTextures objs packageDir = (
         )
     )
     for d in copiedDst do format "Physicl Hub Browser: texture %\n" d
-    missing
+    #(copiedDst.count, missing)
 )
 
 fn PHB_importBackground item = (
     local title = item[1]
+    PHB_importResult = "Import failed: " + title
     if maxFilePath == "" do (
+        PHB_importResult += " (scene not saved)"
         messageBox "Please save the scene first: textures are copied next to the .max file." title:"Scene Not Saved"
         return false
     )
@@ -103,7 +107,8 @@ fn PHB_importBackground item = (
     local objs = selection as array
     if objs.count == 0 do return false
 
-    local missing = PHB_localizeTextures objs dir
+    local tex = PHB_localizeTextures objs dir
+    local missing = tex[2]
     if missing.count > 0 do (
         local msg = "Imported " + title + ", but these textures were not found:\n"
         for m in missing do msg += m + "\n"
@@ -113,6 +118,9 @@ fn PHB_importBackground item = (
     select (for o in objs where isValidNode o collect o)
     completeRedraw()
     format "Physicl Hub Browser: imported % (% objects)\n" title objs.count
+    PHB_importResult = "Imported: " + title + " (" + objs.count as string + " objects, " + tex[1] as string + " textures"
+    if missing.count > 0 do PHB_importResult += ", " + missing.count as string + " missing"
+    PHB_importResult += ")"
     true
 )
 
@@ -206,7 +214,8 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
     group "Knowledge Hub Library" (
         dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:640 height:450 align:#center
     )
-    label lblStatus "" pos:[20,535] width:200
+    -- Item count, or the result of the last import (wraps to two lines for long titles)
+    label lblStatus "" pos:[20,520] width:215 height:30
     button btnRefresh "Refresh" pos:[20,552] width:80 height:26
     button btnImport "IMPORT SELECTED" width:200 height:40 pos:[240,540]
     button btnLogout "Sign out" pos:[580,552] width:80 height:26
@@ -311,7 +320,9 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
             return false
         )
         local idx = (lvBackgrounds.SelectedItems.Item[0]).Index + 1
-        PHB_importBackground PHB_items[idx]
+        local result = PHB_importBackground PHB_items[idx]
+        lblStatus.text = PHB_importResult
+        result
     )
 
     on PHB_mainRollout open do (
