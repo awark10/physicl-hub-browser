@@ -123,10 +123,14 @@ struct PHB_JSON (
 
 struct PHB_KHClient (
     baseUrl = "https://www.kh-physicl.com",
-    -- Knowledge Hub folders shown in the gallery: #(label, folderId)
+    -- Knowledge Hub folders shown in the gallery: #(label, folderId), in tab order.
+    -- folderId undefined = section not wired to the Hub yet; its tab shows "Coming soon".
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
-        #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92")       -- Library > Decals
+        #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
+        #("Grass", undefined),
+        #("Buildings", undefined),
+        #("Textures", undefined)
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 

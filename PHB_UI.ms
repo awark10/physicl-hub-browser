@@ -172,6 +172,12 @@ fn PHB_loadLibrary force:false = (
         return true
     )
     local folderId = PHB_kh.libraries[PHB_library][2]
+    if folderId == undefined do (
+        -- Section without a Hub folder yet: nothing to fetch
+        PHB_items = #()
+        PHB_cache[PHB_library] = #(PHB_items, undefined)
+        return true
+    )
     local r = PHB_kh.fetchCards folderId
     if r[1] == #unauthorized do (
         if not (PHB_ensureLogin()) do return false
@@ -189,11 +195,14 @@ fn PHB_loadLibrary force:false = (
 -- ============================
 -- ROLLOUT: Main UI
 -- ============================
-rollout PHB_mainRollout "Physicl Hub Browser v1.0" width:680 height:590
+rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
 (
-    -- Library tabs; one per entry in PHB_kh.libraries
+    -- Library tabs; one per entry in PHB_kh.libraries, same order
     checkbutton tabLib1 "BACKPLATES" pos:[20,6] width:100 height:26
     checkbutton tabLib2 "DECALS" pos:[122,6] width:100 height:26
+    checkbutton tabLib3 "GRASS" pos:[224,6] width:100 height:26
+    checkbutton tabLib4 "BUILDINGS" pos:[326,6] width:100 height:26
+    checkbutton tabLib5 "TEXTURES" pos:[428,6] width:100 height:26
     group "Knowledge Hub Library" (
         dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:640 height:450 align:#center
     )
@@ -230,6 +239,13 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.0" width:680 height:590
 
     fn fillList = (
         lvBackgrounds.Items.Clear()
+        local onHub = PHB_kh.libraries[PHB_library][2] != undefined
+        btnImport.enabled = onHub
+        btnRefresh.enabled = onHub
+        if not onHub do (
+            lblStatus.text = "Coming soon"
+            return ok
+        )
         local cached = PHB_cache[PHB_library]
         if cached != undefined and cached[2] != undefined do (
             -- Already built: just show it
@@ -273,6 +289,9 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.0" width:680 height:590
     fn showTab i = (
         tabLib1.checked = (i == 1)
         tabLib2.checked = (i == 2)
+        tabLib3.checked = (i == 3)
+        tabLib4.checked = (i == 4)
+        tabLib5.checked = (i == 5)
     )
 
     fn switchLibrary i = (
@@ -309,6 +328,9 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.0" width:680 height:590
 
     on tabLib1 changed st do switchLibrary 1
     on tabLib2 changed st do switchLibrary 2
+    on tabLib3 changed st do switchLibrary 3
+    on tabLib4 changed st do switchLibrary 4
+    on tabLib5 changed st do switchLibrary 5
     on btnRefresh pressed do (if PHB_loadLibrary force:true do fillList())
     on btnImport pressed do importSelected()
     on lvBackgrounds DoubleClick s a do importSelected()

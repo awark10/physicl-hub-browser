@@ -14,7 +14,7 @@ and continues from there as a separate project.
 |---|---|
 | `PhysiclHubBrowser.mcr` | macroScript `PhysiclHubBrowser` (category `Physicl`, "Hub Browser") — loads the two files below and opens the dialog |
 | `PHB_Client.ms` | Knowledge Hub client — login, session cookie, card list, Drive downloads, cache, JSON reader |
-| `PHB_UI.ms` | Login dialog, gallery dialog (BACKPLATES / DECALS tabs), import (merge + texture copy & relink) |
+| `PHB_UI.ms` | Login dialog, gallery dialog (BACKPLATES / DECALS / GRASS / BUILDINGS / TEXTURES tabs), import (merge + texture copy & relink) |
 | `Install_PhysiclHubBrowser.ms` | Installer — copies the three files into `userMacros`, reloads the macro live |
 
 ## How it works
@@ -26,6 +26,9 @@ and continues from there as a separate project.
   "Decals", picked with the tabs at the top of the dialog) returns the cards as JSON; only
   `published` cards are shown. Each library is kept in memory between tab switches until
   **Refresh**. An expired session shows the login dialog again.
+- **Sections in progress:** GRASS, BUILDINGS and TEXTURES are tabs with no Hub folder yet; they
+  show an empty gallery with "Coming soon" and make no Hub requests. Each tab is an entry in
+  `libraries` in `PHB_Client.ms`; setting its `folderId` there turns it into a working library.
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)
   instead of the full preview (up to 100 MB), cached in `Physicl_Hub_Browser_cache\thumbs`.
 - **Import:** requires a saved scene. Downloads the card's zip from Drive into
@@ -45,4 +48,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.0 — see [CHANGELOG.md](CHANGELOG.md).
+v1.1 — see [CHANGELOG.md](CHANGELOG.md).

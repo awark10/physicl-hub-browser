@@ -5,7 +5,7 @@
     -- Define installation paths
     local userMacroDir = getDir #userMacros
     local sourceDir = getFilenamePath (getThisScriptFilename())
-    local version = "v1.0"
+    local version = "v1.1"
     
     -- Function to copy files (similar to Bulb Fixer)
     fn installFile sourcePath targetPath = 
