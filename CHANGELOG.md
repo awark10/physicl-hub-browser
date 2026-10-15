@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.6
+
+- The installer registers the macro in the running 3ds Max (fileIn of the .mcr instead of macros.load, which takes a folder), so "Hub Browser" appears in Customize User Interface right after the first install, without a restart.
+
 ## 1.1.5
 
 - Fix the .mzp install ("Bad number or time syntax" in mzp.run): the version is now part of the package name.
