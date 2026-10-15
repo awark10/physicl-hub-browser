@@ -209,8 +209,12 @@ fn PHB_loadLibrary force:false = (
 -- ============================
 -- ROLLOUT: Main UI
 -- ============================
-rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
+rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:770 height:590
 (
+    -- Gallery thumbnail size (16:9). The list is sized for three columns at this size.
+    local thumbW = 192
+    local thumbH = 108
+
     -- Library tabs; one per entry in PHB_kh.libraries, same order
     checkbutton tabLib1 "BACKPLATES" pos:[20,6] width:100 height:26
     checkbutton tabLib2 "DECALS" pos:[122,6] width:100 height:26
@@ -218,25 +222,25 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
     checkbutton tabLib4 "BUILDINGS" pos:[326,6] width:100 height:26
     checkbutton tabLib5 "TEXTURES" pos:[428,6] width:100 height:26
     group "Knowledge Hub Library" (
-        dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:640 height:450 align:#center
+        dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:730 height:450 align:#center
     )
     label lblStatus "" pos:[20,535] width:200
     button btnRefresh "Refresh" pos:[20,552] width:80 height:26
-    button btnImport "IMPORT SELECTED" width:200 height:40 pos:[240,540]
-    button btnLogout "Sign out" pos:[580,552] width:80 height:26
+    button btnImport "IMPORT SELECTED" width:200 height:40 pos:[285,540]
+    button btnLogout "Sign out" pos:[670,552] width:80 height:26
 
     fn makeThumb file = (
         -- Read through a stream so the cached file is not locked while the dialog is open.
-        -- Fit inside 160x90 keeping the aspect ratio (decals are mostly square, backgrounds wide).
+        -- Fit inside thumbW x thumbH keeping the aspect ratio (decals are mostly square, backgrounds wide).
         local fs = (dotNetClass "System.IO.File").OpenRead file
         local img = (dotNetClass "System.Drawing.Image").FromStream fs
-        local bmp = dotNetObject "System.Drawing.Bitmap" 160 90
+        local bmp = dotNetObject "System.Drawing.Bitmap" thumbW thumbH
         local gfx = (dotNetClass "System.Drawing.Graphics").FromImage bmp
         gfx.Clear ((dotNetClass "System.Drawing.Color").FromArgb 40 40 40)
-        local s = amin (160.0 / img.Width) (90.0 / img.Height)
+        local s = amin ((thumbW as float) / img.Width) ((thumbH as float) / img.Height)
         local w = (img.Width * s) as integer
         local h = (img.Height * s) as integer
-        gfx.DrawImage img ((160 - w) / 2) ((90 - h) / 2) w h
+        gfx.DrawImage img ((thumbW - w) / 2) ((thumbH - h) / 2) w h
         gfx.Dispose()
         img.Dispose()
         fs.Close()
@@ -244,7 +248,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
     )
 
     fn grayThumb = (
-        local bmp = dotNetObject "System.Drawing.Bitmap" 160 90
+        local bmp = dotNetObject "System.Drawing.Bitmap" thumbW thumbH
         local gfx = (dotNetClass "System.Drawing.Graphics").FromImage bmp
         gfx.Clear ((dotNetClass "System.Drawing.Color").Gray)
         gfx.Dispose()
@@ -261,7 +265,8 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
             return ok
         )
         local cached = PHB_cache[PHB_library]
-        if cached != undefined and cached[2] != undefined do (
+        -- An image list built at another thumbnail size (before a reinstall) is rebuilt below
+        if cached != undefined and cached[2] != undefined and cached[2].ImageSize.Width == thumbW do (
             -- Already built: just show it
             lvBackgrounds.BeginUpdate()
             lvBackgrounds.LargeImageList = cached[2]
@@ -275,7 +280,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:680 height:590
             return ok
         )
         local imgList = dotNetObject "System.Windows.Forms.ImageList"
-        imgList.ImageSize = dotNetObject "System.Drawing.Size" 160 90 -- 16:9 thumbnails
+        imgList.ImageSize = dotNetObject "System.Drawing.Size" thumbW thumbH
         imgList.ColorDepth = (dotNetClass "System.Windows.Forms.ColorDepth").Depth32Bit
         lvBackgrounds.LargeImageList = imgList
 
