@@ -140,6 +140,7 @@ struct PHB_KHClient (
     client = undefined,
     json = PHB_JSON(),
     lastError = "",
+    lastStats = "", -- what the last card list contained, for the Listener log
 
     -- ============================
     -- SETUP
@@ -289,19 +290,25 @@ struct PHB_KHClient (
         js.MaxJsonLength = 2147483647
         local root = js.DeserializeObject text
         local items = #()
-        if not (root.ContainsKey "cards") do return items
+        if not (root.ContainsKey "cards") do (
+            lastStats = "no \"cards\" in the answer"
+            return items
+        )
         fn field c key = (if c.ContainsKey key then c.Item[key] else undefined)
         local raw = root.Item["cards"]
         -- MAXScript may hand back a converted Array or the .NET object[] itself
         local cards = if classOf raw == Array then raw else (for i = 0 to raw.Length - 1 collect raw.GetValue i)
+        local published = 0
         for c in cards do (
             if (field c "status") == "published" do (
+                published += 1
                 local title = field c "title"
                 local dId = driveId (field c "downloadUrl")
                 if title != undefined and dId != undefined do
                     append items #(title, driveId (field c "previewImageUrl"), dId)
             )
         )
+        lastStats = (cards.count as string) + " cards, " + (published as string) + " published, " + (items.count as string) + " shown"
         qsort items byTitle
         items
     ),
@@ -315,14 +322,18 @@ struct PHB_KHClient (
         if fast != undefined do return fast
         local items = #()
         local cards = json.get (json.parse text) "cards"
+        local published = 0
         if cards != undefined do for c in cards do (
             if (json.get c "status") == "published" do (
+                published += 1
                 local title = json.get c "title"
                 local dId = driveId (json.get c "downloadUrl")
                 if title != undefined and dId != undefined do
                     append items #(title, driveId (json.get c "previewImageUrl"), dId)
             )
         )
+        lastStats = if cards == undefined then "no \"cards\" in the answer" else \
+            ((cards.count as string) + " cards, " + (published as string) + " published, " + (items.count as string) + " shown")
         qsort items byTitle
         items
     ),

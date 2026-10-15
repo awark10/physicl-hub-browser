@@ -200,6 +200,7 @@ fn PHB_loadLibrary force:false = (
             r = PHB_kh.fetchCards id
         )
         if r[1] == #ok then (
+            format "Physicl Hub Browser: % folder %: %\n" PHB_kh.libraries[PHB_library][1] id PHB_kh.lastStats
             join items r[2]
             loaded += 1
         ) else errors += (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired") + "\n"
