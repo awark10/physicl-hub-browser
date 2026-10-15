@@ -131,7 +131,7 @@ struct PHB_KHClient (
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
         -- Two folders under the same parent (1b736021-...) in one tab
         #("Grass", #("4d7cebe9-23f1-4df5-9cea-dfd350e972e8", "2076619a-29d3-4f64-9da7-4b5efb90fe76")),
-        #("Buildings", undefined),
+        #("Buildings & Parts", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Library > ... > Buildings & Parts (parent 1b736021-...)
         #("Textures", undefined)
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",

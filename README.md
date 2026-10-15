@@ -14,7 +14,7 @@ and continues from there as a separate project.
 |---|---|
 | `PhysiclHubBrowser.mcr` | macroScript `PhysiclHubBrowser` (category `PHYSICL`, "Hub Browser") — loads the two files below and opens the dialog |
 | `PHB_Client.ms` | Knowledge Hub client — login, session cookie, card list, Drive downloads, cache, JSON reader |
-| `PHB_UI.ms` | Login dialog, gallery dialog (BACKPLATES / DECALS / GRASS / BUILDINGS / TEXTURES tabs), import (merge + texture copy & relink) |
+| `PHB_UI.ms` | Login dialog, gallery dialog (BACKPLATES / DECALS / GRASS / BUILDINGS & PARTS / TEXTURES tabs), import (merge + texture copy & relink) |
 | `Install_PhysiclHubBrowser.ms` | Installer — copies the three files into `userMacros`, reloads the macro live |
 
 ## How it works
@@ -22,12 +22,12 @@ and continues from there as a separate project.
 - **Login:** `POST /api/auth/login` with email and password; the Hub answers with a Supabase
   session cookie. With "Remember me" the cookie is saved to `Physicl_Hub_Browser_cache\session.dat`,
   encrypted per Windows user (DPAPI). The password is never stored.
-- **Library:** `GET /api/library/cards?folderId=…` (folders "Exterior scene Backplates", "Decals" and two Grass folders,
+- **Library:** `GET /api/library/cards?folderId=…` (folders "Exterior scene Backplates", "Decals", two Grass folders and "Buildings & Parts",
   picked with the tabs at the top of the dialog) returns the cards as JSON; only
   `published` cards are shown. Each library is kept in memory between tab switches until
   **Refresh**. An expired session shows the login dialog again.
-- **Sections in progress:** BUILDINGS and TEXTURES are tabs with no Hub folder yet; they
-  show an empty gallery with "Coming soon" and make no Hub requests. Each tab is an entry in
+- **Sections in progress:** TEXTURES is a tab with no Hub folder yet; it
+  shows an empty gallery with "Coming soon" and makes no Hub requests. Each tab is an entry in
   `libraries` in `PHB_Client.ms`; setting its `folderId` there turns it into a working library.
   A tab can also list several folderIds (like GRASS); their cards are shown together.
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)

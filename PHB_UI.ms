@@ -229,8 +229,9 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     checkbutton tabLib1 "BACKPLATES" pos:[20,6] width:120 height:31
     checkbutton tabLib2 "DECALS" pos:[142,6] width:120 height:31
     checkbutton tabLib3 "GRASS" pos:[264,6] width:120 height:31
-    checkbutton tabLib4 "BUILDINGS" pos:[386,6] width:120 height:31
-    checkbutton tabLib5 "TEXTURES" pos:[508,6] width:120 height:31
+    -- "&&" shows a literal "&" (a single one would underline the next letter as a shortcut)
+    checkbutton tabLib4 "BUILDINGS && PARTS" pos:[386,6] width:160 height:31
+    checkbutton tabLib5 "TEXTURES" pos:[548,6] width:120 height:31
     -- Positions below are for the full 1296x996 size; layout moves them for smaller screens
     groupBox grpLib "Knowledge Hub Library" pos:[10,42] width:1276 height:890
     dotNetControl lvBackgrounds "System.Windows.Forms.ListView" pos:[20,60] width:1256 height:862
