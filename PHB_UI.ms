@@ -209,11 +209,12 @@ fn PHB_loadLibrary force:false = (
 -- ============================
 -- ROLLOUT: Main UI
 -- ============================
-rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:770 height:590
+rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1080 height:830
 (
-    -- Gallery thumbnail size (16:9). The list is sized for three columns at this size.
-    local thumbW = 192
-    local thumbH = 108
+    -- Gallery thumbnail size (16:9). 256 is the largest size a .NET ImageList allows;
+    -- setIconSpacing spreads three columns over the full list width.
+    local thumbW = 256
+    local thumbH = 144
 
     -- Library tabs; one per entry in PHB_kh.libraries, same order
     checkbutton tabLib1 "BACKPLATES" pos:[20,6] width:100 height:26
@@ -222,12 +223,12 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:770 height:590
     checkbutton tabLib4 "BUILDINGS" pos:[326,6] width:100 height:26
     checkbutton tabLib5 "TEXTURES" pos:[428,6] width:100 height:26
     group "Knowledge Hub Library" (
-        dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:730 height:450 align:#center
+        dotNetControl lvBackgrounds "System.Windows.Forms.ListView" width:1040 height:690 align:#center
     )
-    label lblStatus "" pos:[20,535] width:200
-    button btnRefresh "Refresh" pos:[20,552] width:80 height:26
-    button btnImport "IMPORT SELECTED" width:200 height:40 pos:[285,540]
-    button btnLogout "Sign out" pos:[670,552] width:80 height:26
+    label lblStatus "" pos:[20,775] width:200
+    button btnRefresh "Refresh" pos:[20,792] width:80 height:26
+    button btnImport "IMPORT SELECTED" width:200 height:40 pos:[440,780]
+    button btnLogout "Sign out" pos:[980,792] width:80 height:26
 
     fn makeThumb file = (
         -- Read through a stream so the cached file is not locked while the dialog is open.
@@ -255,6 +256,21 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:770 height:590
         bmp
     )
 
+    -- Three equal columns across the list (LVM_SETICONSPACING); without it Windows packs the
+    -- icons to the left. Set again after every image list change, which resets the spacing.
+    fn setIconSpacing = (
+        try (
+            local hwnd = lvBackgrounds.Handle
+            if classOf hwnd == dotNetObject do hwnd = hwnd.ToInt64()
+            local scrollW = (dotNetClass "System.Windows.Forms.SystemInformation").VerticalScrollBarWidth
+            local cx = (lvBackgrounds.Width - 6 - scrollW) / 3
+            local cy = thumbH + 44
+            windows.sendMessage hwnd 0x1035 0 (cy * 65536 + cx)
+        ) catch (
+            format "Physicl Hub Browser: could not set the gallery spacing: %\n" (getCurrentException())
+        )
+    )
+
     fn fillList = (
         lvBackgrounds.Items.Clear()
         local onHub = PHB_kh.libraries[PHB_library][2] != undefined
@@ -270,6 +286,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:770 height:590
             -- Already built: just show it
             lvBackgrounds.BeginUpdate()
             lvBackgrounds.LargeImageList = cached[2]
+            setIconSpacing()
             for i = 1 to PHB_items.count do (
                 local lvi = dotNetObject "System.Windows.Forms.ListViewItem" PHB_items[i][1]
                 lvi.ImageIndex = i - 1
@@ -283,6 +300,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:770 height:590
         imgList.ImageSize = dotNetObject "System.Drawing.Size" thumbW thumbH
         imgList.ColorDepth = (dotNetClass "System.Windows.Forms.ColorDepth").Depth32Bit
         lvBackgrounds.LargeImageList = imgList
+        setIconSpacing()
 
         progressStart ("Loading " + PHB_kh.libraries[PHB_library][1] + " from Knowledge Hub...")
         lvBackgrounds.BeginUpdate()
