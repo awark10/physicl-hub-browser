@@ -136,7 +136,9 @@ struct PHB_KHClient (
         #("Buildings & Parts", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Library > ... > Buildings & Parts (parent 1b736021-...)
         -- Library > Textures (5cb26050-...) is split into category subfolders; add them here as
         -- #("Concrete", "<folderId>"), ... ("Coming soon" while the list is empty)
-        #("Textures", undefined, #())
+        #("Textures", undefined, #(
+            #("Bricks", "b86423ba-ce47-47a9-a570-7f472a6982f2")
+        ))
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
