@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- The dialog title shows the full version (v1.1.1); it is bumped with every change from now on.
+- A tab whose settings changed (e.g. Textures after a reinstall) loads again instead of showing what was kept in memory in the same 3ds Max session.
+
 ## 1.1
 
 - New tabs Grass, Buildings & Parts, Textures. Grass loads two Hub folders into one gallery, Buildings & Parts one; Textures is a placeholder ("Coming soon") until its Hub folder is added.

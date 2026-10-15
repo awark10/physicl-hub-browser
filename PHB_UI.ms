@@ -1,14 +1,17 @@
 -- Physicl Hub Browser UI: Knowledge Hub login, gallery and import.
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
+-- Shown in the dialog title; bumped with every change (keep the installer's version in step)
+global PHB_version = "1.1.1"
+
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
 global PHB_loginOk = false
 global PHB_library -- index into PHB_kh.libraries; kept between openings
 if PHB_library == undefined do PHB_library = 1
 global PHB_mainRollout
--- Per library: #(items, ImageList). Filled on first visit, reused on tab switches and reopenings,
--- rebuilt only by Refresh.
+-- Per library: #(items, thumbnails, settings). Filled on first visit, reused on tab switches and
+-- reopenings, rebuilt by Refresh or when the library's settings in PHB_Client.ms changed (reinstall).
 global PHB_cache
 if PHB_cache == undefined do PHB_cache = #()
 global PHB_loginRollout
@@ -188,7 +191,8 @@ fn PHB_disposeThumbs entry = (
 -- Uses the in-memory copy unless force:true (Refresh).
 fn PHB_loadLibrary force:false = (
     local cached = PHB_cache[PHB_library]
-    if not force and cached != undefined do (
+    local settings = PHB_kh.libraries[PHB_library] as string
+    if not force and cached != undefined and cached.count >= 3 and cached[3] == settings do (
         PHB_items = cached[1]
         return true
     )
@@ -213,7 +217,7 @@ fn PHB_loadLibrary force:false = (
     if folders.count == 0 do (
         -- Section without a Hub folder yet: nothing to fetch
         PHB_items = #()
-        PHB_cache[PHB_library] = #(PHB_items, undefined)
+        PHB_cache[PHB_library] = #(PHB_items, undefined, settings)
         return true
     )
     -- Several folders are shown as one gallery, folder by folder; each item remembers its
@@ -238,7 +242,7 @@ fn PHB_loadLibrary force:false = (
     if loaded == 0 do return false
     PHB_items = items
     PHB_disposeThumbs PHB_cache[PHB_library]
-    PHB_cache[PHB_library] = #(PHB_items, undefined) -- thumbnails are (re)built by fillList
+    PHB_cache[PHB_library] = #(PHB_items, undefined, settings) -- thumbnails are (re)built by fillList
     true
 )
 
@@ -246,7 +250,7 @@ fn PHB_loadLibrary force:false = (
 -- ROLLOUT: Main UI
 -- ============================
 -- Sized for a 2560x1440 screen (about 1030 px tall with the title bar).
-rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
+rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
 (
     -- Gallery thumbnail size (16:9). The gallery is owner-drawn because a .NET ImageList
     -- cannot hold images wider than 256 px; the ImageList only sizes the cells.
@@ -469,6 +473,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     )
 
     on PHB_mainRollout open do (
+        PHB_mainRollout.title = "Physicl Hub Browser v" + PHB_version
         lvBackgrounds.View = (dotNetClass "System.Windows.Forms.View").LargeIcon
         lvBackgrounds.MultiSelect = false
         lvBackgrounds.HideSelection = false
