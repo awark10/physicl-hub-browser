@@ -22,13 +22,14 @@ and continues from there as a separate project.
 - **Login:** `POST /api/auth/login` with email and password; the Hub answers with a Supabase
   session cookie. With "Remember me" the cookie is saved to `Physicl_Hub_Browser_cache\session.dat`,
   encrypted per Windows user (DPAPI). The password is never stored.
-- **Library:** `GET /api/library/cards?folderId=…` (folders "Exterior scene Backplates", "Decals" and "Grass",
+- **Library:** `GET /api/library/cards?folderId=…` (folders "Exterior scene Backplates", "Decals" and two Grass folders,
   picked with the tabs at the top of the dialog) returns the cards as JSON; only
   `published` cards are shown. Each library is kept in memory between tab switches until
   **Refresh**. An expired session shows the login dialog again.
 - **Sections in progress:** BUILDINGS and TEXTURES are tabs with no Hub folder yet; they
   show an empty gallery with "Coming soon" and make no Hub requests. Each tab is an entry in
   `libraries` in `PHB_Client.ms`; setting its `folderId` there turns it into a working library.
+  A tab can also list several folderIds (like GRASS); their cards are shown together.
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)
   instead of the full preview (up to 100 MB), cached in `Physicl_Hub_Browser_cache\thumbs`.
 - **Import:** requires a saved scene. Downloads the card's zip from Drive into

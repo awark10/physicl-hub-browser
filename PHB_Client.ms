@@ -124,11 +124,13 @@ struct PHB_JSON (
 struct PHB_KHClient (
     baseUrl = "https://www.kh-physicl.com",
     -- Knowledge Hub folders shown in the gallery: #(label, folderId), in tab order.
+    -- folderId can also be an array of folderIds: their cards are shown together, folder by folder.
     -- folderId undefined = section not wired to the Hub yet; its tab shows "Coming soon".
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
-        #("Grass", "4d7cebe9-23f1-4df5-9cea-dfd350e972e8"),       -- Library > ... > Grass (parent folder 1b736021-...)
+        -- Two folders under the same parent (1b736021-...) in one tab
+        #("Grass", #("4d7cebe9-23f1-4df5-9cea-dfd350e972e8", "2076619a-29d3-4f64-9da7-4b5efb90fe76")),
         #("Buildings", undefined),
         #("Textures", undefined)
     ),

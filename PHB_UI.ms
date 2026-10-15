@@ -182,16 +182,26 @@ fn PHB_loadLibrary force:false = (
         PHB_cache[PHB_library] = #(PHB_items, undefined)
         return true
     )
-    local r = PHB_kh.fetchCards folderId
-    if r[1] == #unauthorized do (
-        if not (PHB_ensureLogin()) do return false
-        r = PHB_kh.fetchCards folderId
+    -- One folderId or several; several are shown as one gallery, folder by folder
+    local folderIds = if classOf folderId == Array then folderId else #(folderId)
+    local items = #()
+    local errors = ""
+    local loaded = 0
+    for id in folderIds do (
+        local r = PHB_kh.fetchCards id
+        if r[1] == #unauthorized do (
+            if not (PHB_ensureLogin()) do return false
+            r = PHB_kh.fetchCards id
+        )
+        if r[1] == #ok then (
+            join items r[2]
+            loaded += 1
+        ) else errors += (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired") + "\n"
     )
-    if r[1] != #ok do (
-        messageBox ("Could not load the library:\n" + PHB_kh.lastError) title:"Physicl Hub Browser"
-        return false
-    )
-    PHB_items = r[2]
+    if errors != "" do
+        messageBox ("Could not load the library:\n" + errors) title:"Physicl Hub Browser"
+    if loaded == 0 do return false
+    PHB_items = items
     PHB_cache[PHB_library] = #(PHB_items, undefined) -- thumbnails are (re)built by fillList
     true
 )
