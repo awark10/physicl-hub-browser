@@ -30,6 +30,9 @@ and continues from there as a separate project.
   shows an empty gallery with "Coming soon" and makes no Hub requests. Each tab is an entry in
   `libraries` in `PHB_Client.ms`; setting its `folderId` there turns it into a working library.
   A tab can also list several folderIds (like GRASS); their cards are shown together.
+- **Categories:** a library can list category folders (TEXTURES, under Library > Textures); the
+  tab then loads all of them and a "Category" list above the gallery (All / one category) filters
+  the thumbnails without new Hub requests.
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)
   instead of the full preview (up to 100 MB), cached in `Physicl_Hub_Browser_cache\thumbs`.
 - **Import:** requires a saved scene. Downloads the card's zip from Drive into

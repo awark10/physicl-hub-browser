@@ -12,6 +12,8 @@ global PHB_mainRollout
 global PHB_cache
 if PHB_cache == undefined do PHB_cache = #()
 global PHB_loginRollout
+global PHB_category -- per library: selected entry of the category list (1 = All)
+if PHB_category == undefined do PHB_category = #()
 
 -- ============================
 -- IMPORT
@@ -181,27 +183,27 @@ fn PHB_loadLibrary force:false = (
         PHB_items = cached[1]
         return true
     )
-    local folderId = PHB_kh.libraries[PHB_library][2]
-    if folderId == undefined do (
+    local folders = PHB_kh.foldersOf PHB_library
+    if folders.count == 0 do (
         -- Section without a Hub folder yet: nothing to fetch
         PHB_items = #()
         PHB_cache[PHB_library] = #(PHB_items, undefined)
         return true
     )
-    -- One folderId or several; several are shown as one gallery, folder by folder
-    local folderIds = if classOf folderId == Array then folderId else #(folderId)
+    -- Several folders are shown as one gallery, folder by folder; each item remembers its
+    -- category (item[4]) for the category list
     local items = #()
     local errors = ""
     local loaded = 0
-    for id in folderIds do (
-        local r = PHB_kh.fetchCards id
+    for f in folders do (
+        local r = PHB_kh.fetchCards f[1]
         if r[1] == #unauthorized do (
             if not (PHB_ensureLogin()) do return false
-            r = PHB_kh.fetchCards id
+            r = PHB_kh.fetchCards f[1]
         )
         if r[1] == #ok then (
-            format "Physicl Hub Browser: % folder %: %\n" PHB_kh.libraries[PHB_library][1] id PHB_kh.lastStats
-            join items r[2]
+            format "Physicl Hub Browser: % folder %: %\n" PHB_kh.libraries[PHB_library][1] f[1] PHB_kh.lastStats
+            for it in r[2] do append items (append it f[2])
             loaded += 1
         ) else errors += (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired") + "\n"
     )
@@ -225,6 +227,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     local thumbW = 307
     local thumbH = 173
     local thumbs = #() -- Bitmaps of the library on screen, same order as PHB_items
+    local shown = #() -- PHB_items indices of the gallery entries (the selected category)
 
     -- Library tabs; one per entry in PHB_kh.libraries, same order
     checkbutton tabLib1 "BACKPLATES" pos:[20,6] width:120 height:31
@@ -232,6 +235,9 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     checkbutton tabLib3 "GRASS" pos:[264,6] width:120 height:31
     checkbutton tabLib4 "BUILDINGS & PARTS" pos:[386,6] width:160 height:31
     checkbutton tabLib5 "TEXTURES" pos:[548,6] width:120 height:31
+    -- Category list, only for libraries that define categories
+    label lblCategory "Category:" pos:[700,14] visible:false
+    dropdownlist ddlCategory "" pos:[756,10] width:220 visible:false
     -- Positions below are for the full 1296x996 size; layout moves them for smaller screens
     groupBox grpLib "Knowledge Hub Library" pos:[10,42] width:1276 height:890
     dotNetControl lvBackgrounds "System.Windows.Forms.ListView" pos:[20,60] width:1256 height:862
@@ -300,13 +306,49 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
         )
     )
 
+    fn updateCategories = (
+        local cats = PHB_kh.categoriesOf PHB_library
+        local has = cats.count > 0
+        lblCategory.visible = has
+        ddlCategory.visible = has
+        if has do (
+            local names = #("All")
+            for c in cats do append names c[1]
+            ddlCategory.items = names
+            local sel = PHB_category[PHB_library]
+            ddlCategory.selection = if sel != undefined and sel <= names.count then sel else 1
+        )
+    )
+
+    -- Fills the list with the thumbnails of the selected category (all of them without a list)
+    fn showItems = (
+        local cat = if ddlCategory.visible then ddlCategory.selection - 1 else 0
+        shown = for i = 1 to thumbs.count where cat == 0 or PHB_items[i][4] == cat collect i
+        lvBackgrounds.Items.Clear()
+        -- The ImageList only gives every cell its height; drawItem paints the thumbnails
+        local imgList = dotNetObject "System.Windows.Forms.ImageList"
+        imgList.ImageSize = dotNetObject "System.Drawing.Size" 256 thumbH
+        lvBackgrounds.LargeImageList = imgList
+        setIconSpacing()
+        lvBackgrounds.BeginUpdate()
+        for i in shown do (
+            local lvi = dotNetObject "System.Windows.Forms.ListViewItem" PHB_items[i][1]
+            lvi.ImageIndex = 0
+            lvBackgrounds.Items.Add lvi
+        )
+        lvBackgrounds.EndUpdate()
+        lblStatus.text = (shown.count as string) + " items"
+    )
+
     fn fillList = (
         lvBackgrounds.Items.Clear()
-        local onHub = PHB_kh.libraries[PHB_library][2] != undefined
+        updateCategories()
+        local onHub = (PHB_kh.foldersOf PHB_library).count > 0
         btnImport.enabled = onHub
         btnRefresh.enabled = onHub
         if not onHub do (
             thumbs = #()
+            shown = #()
             lblStatus.text = "Coming soon"
             return ok
         )
@@ -331,20 +373,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
             -- Keep them only if every thumbnail was made (not cancelled)
             if cached != undefined and thumbs.count == PHB_items.count do cached[2] = thumbs
         )
-
-        -- The ImageList only gives every cell its height; drawItem paints the thumbnails
-        local imgList = dotNetObject "System.Windows.Forms.ImageList"
-        imgList.ImageSize = dotNetObject "System.Drawing.Size" 256 thumbH
-        lvBackgrounds.LargeImageList = imgList
-        setIconSpacing()
-        lvBackgrounds.BeginUpdate()
-        for i = 1 to thumbs.count do (
-            local lvi = dotNetObject "System.Windows.Forms.ListViewItem" PHB_items[i][1]
-            lvi.ImageIndex = 0
-            lvBackgrounds.Items.Add lvi
-        )
-        lvBackgrounds.EndUpdate()
-        lblStatus.text = (PHB_items.count as string) + " items"
+        showItems()
     )
 
     -- Owner draw: thumbnail centred in the cell, title below, blue background when selected
@@ -358,7 +387,8 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
         brush.Dispose()
         local x = b.X + (b.Width - thumbW) / 2
         local y = b.Y + 2
-        local bmp = thumbs[e.ItemIndex + 1]
+        local idx = shown[e.ItemIndex + 1]
+        local bmp = if idx != undefined then thumbs[idx] else undefined
         if bmp != undefined do g.DrawImage bmp x y thumbW thumbH
         local fmt = dotNetObject "System.Drawing.StringFormat"
         fmt.Alignment = (dotNetClass "System.Drawing.StringAlignment").Center
@@ -396,7 +426,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
             return false
         )
         local idx = (lvBackgrounds.SelectedItems.Item[0]).Index + 1
-        PHB_importBackground PHB_items[idx]
+        PHB_importBackground PHB_items[shown[idx]]
     )
 
     on PHB_mainRollout open do (
@@ -420,6 +450,10 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     on tabLib3 changed st do switchLibrary 3
     on tabLib4 changed st do switchLibrary 4
     on tabLib5 changed st do switchLibrary 5
+    on ddlCategory selected i do (
+        PHB_category[PHB_library] = i
+        showItems()
+    )
     on btnRefresh pressed do (if PHB_loadLibrary force:true do fillList())
     on btnImport pressed do importSelected()
     on lvBackgrounds DoubleClick s a do importSelected()

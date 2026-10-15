@@ -126,13 +126,17 @@ struct PHB_KHClient (
     -- Knowledge Hub folders shown in the gallery: #(label, folderId), in tab order.
     -- folderId can also be an array of folderIds: their cards are shown together, folder by folder.
     -- folderId undefined = section not wired to the Hub yet; its tab shows "Coming soon".
+    -- An optional third element lists categories #(#(label, folderId), ...): the tab loads every
+    -- category folder and shows a category list above the gallery (folderId may again be an array).
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
         -- Two folders under the same parent (1b736021-...) in one tab
         #("Grass", #("4d7cebe9-23f1-4df5-9cea-dfd350e972e8", "2076619a-29d3-4f64-9da7-4b5efb90fe76")),
         #("Buildings & Parts", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Library > ... > Buildings & Parts (parent 1b736021-...)
-        #("Textures", undefined)
+        -- Library > Textures (5cb26050-...) is split into category subfolders; add them here as
+        -- #("Concrete", "<folderId>"), ... ("Coming soon" while the list is empty)
+        #("Textures", undefined, #())
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
@@ -141,6 +145,27 @@ struct PHB_KHClient (
     json = PHB_JSON(),
     lastError = "",
     lastStats = "", -- what the last card list contained, for the Listener log
+
+    -- ============================
+    -- LIBRARY LIST
+    -- ============================
+
+    fn categoriesOf i = (
+        if libraries[i].count >= 3 then libraries[i][3] else #()
+    ),
+
+    -- Folders to fetch for library i: #(#(folderId, category index), ...); category 0 = no list
+    fn foldersOf i = (
+        fn ids f = (if classOf f == Array then f else if f == undefined then #() else #(f))
+        local result = #()
+        local cats = categoriesOf i
+        if cats.count > 0 then (
+            for c = 1 to cats.count do for id in (ids cats[c][2]) do append result #(id, c)
+        ) else (
+            for id in (ids libraries[i][2]) do append result #(id, 0)
+        )
+        result
+    ),
 
     -- ============================
     -- SETUP
