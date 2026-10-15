@@ -5,7 +5,7 @@
     -- Define installation paths
     local userMacroDir = getDir #userMacros
     local sourceDir = getFilenamePath (getThisScriptFilename())
-    local version = "v1.1.3" -- same as PHB_version in PHB_UI.ms
+    local version = "v1.1.4" -- same as PHB_version in PHB_UI.ms
     
     -- Function to copy files (similar to Bulb Fixer)
     fn installFile sourcePath targetPath = 

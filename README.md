@@ -56,4 +56,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.1.3 — see [CHANGELOG.md](CHANGELOG.md).
+v1.1.4 — see [CHANGELOG.md](CHANGELOG.md).

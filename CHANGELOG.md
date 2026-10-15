@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.4
+
+- Cards whose title has characters not allowed in file names (e.g. "Dark Red / Brown Brick") now get their preview and can be imported; those characters become "_" in cache file names.
+
 ## 1.1.3
 
 - .mzp package for distribution (`build_mzp.ps1` builds `dist/PhysiclHubBrowser_v<version>.mzp`).

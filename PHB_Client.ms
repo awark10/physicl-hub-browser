@@ -505,12 +505,14 @@ struct PHB_KHClient (
     -- Gallery thumbnail: Drive renders a ~320px copy server side, so a 100 MB preview costs ~60 KB.
     -- Cached once per Drive id (the gallery downloads missing ones with downloadMany);
     -- later openings read only the local file.
-    fn previewPath title fileId = cacheDir + "thumbs\\" + title + "_" + fileId + ".png",
+    -- Card titles may contain characters Windows does not allow in file names ("Dark Red / Brown Brick")
+    fn safeName title = (dotNetClass "System.Text.RegularExpressions.Regex").Replace title "[\\\\/:*?\"<>|]" "_",
+    fn previewPath title fileId = cacheDir + "thumbs\\" + (safeName title) + "_" + fileId + ".png",
     fn previewUrl fileId = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w320",
 
     -- Downloads and unpacks the background package; returns the folder or undefined
     fn getPackage title fileId = (
-        local base = cacheDir + "packages\\" + title + "_" + fileId
+        local base = cacheDir + "packages\\" + (safeName title) + "_" + fileId
         local zip = base + ".zip"
         local dir = base + "\\"
         if doesDirectoryExist dir do return dir
