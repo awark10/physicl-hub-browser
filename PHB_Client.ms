@@ -128,7 +128,7 @@ struct PHB_KHClient (
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
-        #("Grass", undefined),
+        #("Grass", "4d7cebe9-23f1-4df5-9cea-dfd350e972e8"),       -- Library > ... > Grass (parent folder 1b736021-...)
         #("Buildings", undefined),
         #("Textures", undefined)
     ),
