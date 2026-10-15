@@ -142,6 +142,7 @@ struct PHB_KHClient (
 
     cookies = undefined,
     client = undefined,
+    dl = undefined, -- downloads: follows Drive's redirects, no Hub cookies; one client so connections are reused
     json = PHB_JSON(),
     lastError = "",
     lastStats = "", -- what the last card list contained, for the Listener log
@@ -183,6 +184,8 @@ struct PHB_KHClient (
         try (
             local spm = dotNetClass "System.Net.ServicePointManager"
             spm.SecurityProtocol = (dotNetClass "System.Net.SecurityProtocolType").Tls12
+            -- .NET Framework allows only 2 connections per host by default; downloadMany runs 8 at once
+            if spm.DefaultConnectionLimit < 16 do spm.DefaultConnectionLimit = 16
         ) catch ()
 
         cookies = dotNetObject "System.Net.CookieContainer"
@@ -194,6 +197,10 @@ struct PHB_KHClient (
         client = dotNetObject "System.Net.Http.HttpClient" handler
         client.Timeout = dotNetObject "System.TimeSpan" 0 5 0
         client.DefaultRequestHeaders.Add "User-Agent" "PhysiclHubBrowser-3dsMax/1.0"
+
+        dl = dotNetObject "System.Net.Http.HttpClient"
+        dl.Timeout = dotNetObject "System.TimeSpan" 0 10 0
+        dl.DefaultRequestHeaders.Add "User-Agent" "PhysiclHubBrowser-3dsMax/1.0"
 
         makeDir (cacheDir + "thumbs") all:true
         makeDir (cacheDir + "packages") all:true
@@ -432,47 +439,71 @@ struct PHB_KHClient (
         this.downloadUrl ("https://drive.usercontent.google.com/download?id=" + fileId + "&export=download&confirm=t") dstPath
     ),
 
-    fn downloadUrl url dstPath = (
-        if doesFileExist dstPath do return true
+    -- Writes a download response to dstPath (through a .part file); false with lastError set
+    -- for an HTTP error or an HTML page instead of the file
+    fn saveResponse resp dstPath = (
+        if not resp.IsSuccessStatusCode do (
+            lastError = "Download failed (HTTP " + (statusOf resp) as string + ")"
+            return false
+        )
+        local mediaType = if resp.Content.Headers.ContentType != undefined then resp.Content.Headers.ContentType.MediaType else ""
+        -- An HTML page instead of a file means the link is not public or the quota is exceeded
+        if matchPattern mediaType pattern:"text/html*" do (
+            lastError = "Google Drive returned a web page instead of the file (link not public or download quota exceeded)."
+            return false
+        )
         local tmp = dstPath + ".part"
         try (
-            -- Separate client that follows Drive's redirects and keeps no Hub cookies
-            local dl = dotNetObject "System.Net.Http.HttpClient"
-            dl.Timeout = dotNetObject "System.TimeSpan" 0 10 0
-            dl.DefaultRequestHeaders.Add "User-Agent" "PhysiclHubBrowser-3dsMax/1.0"
-            local resp = (dl.GetAsync url).Result
-            if not resp.IsSuccessStatusCode do (
-                lastError = "Download failed (HTTP " + (statusOf resp) as string + ")"
-                dl.Dispose()
-                return false
-            )
-            local mediaType = if resp.Content.Headers.ContentType != undefined then resp.Content.Headers.ContentType.MediaType else ""
-            -- An HTML page instead of a file means the link is not public or the quota is exceeded
-            if matchPattern mediaType pattern:"text/html*" do (
-                lastError = "Google Drive returned a web page instead of the file (link not public or download quota exceeded)."
-                dl.Dispose()
-                return false
-            )
             local bytes = (resp.Content.ReadAsByteArrayAsync()).Result
             (dotNetClass "System.IO.File").WriteAllBytes tmp bytes
-            dl.Dispose()
             if doesFileExist dstPath do deleteFile dstPath
             renameFile tmp dstPath
         ) catch (
             if doesFileExist tmp do deleteFile tmp
+            lastError = "Could not save " + (filenameFromPath dstPath) + ": " + (getCurrentException())
+            false
+        )
+    ),
+
+    fn downloadUrl url dstPath = (
+        if doesFileExist dstPath do return true
+        try (
+            local resp = (dl.GetAsync url).Result
+            local saved = saveResponse resp dstPath
+            resp.Dispose()
+            saved
+        ) catch (
             lastError = "Download failed: " + (getCurrentException())
             false
         )
     ),
 
+    -- Several downloads at once: jobs = #(#(url, dstPath), ...). All requests are started first,
+    -- then collected; GetAsync completes only when the whole body is in memory. Failures are
+    -- logged and leave the file missing.
+    fn downloadMany jobs = (
+        local tasks = for j in jobs collect (try (dl.GetAsync j[1]) catch (undefined))
+        for k = 1 to jobs.count do (
+            local saved = false
+            if tasks[k] != undefined do saved = try (
+                local resp = tasks[k].Result
+                local done = saveResponse resp jobs[k][2]
+                resp.Dispose()
+                done
+            ) catch (
+                lastError = "Download failed: " + (getCurrentException())
+                false
+            )
+            if not saved do format "Physicl Hub Browser: % - %\n" (filenameFromPath jobs[k][2]) lastError
+        )
+    ),
+
     -- Cache names include the Drive id, so a file replaced on the Hub is fetched again
     -- Gallery thumbnail: Drive renders a ~320px copy server side, so a 100 MB preview costs ~60 KB.
-    -- Cached once per Drive id; later openings read only the local file.
-    fn getPreview title fileId = (
-        if fileId == undefined do return undefined
-        local p = cacheDir + "thumbs\\" + title + "_" + fileId + ".png"
-        if downloadUrl ("https://drive.google.com/thumbnail?id=" + fileId + "&sz=w320") p then p else undefined
-    ),
+    -- Cached once per Drive id (the gallery downloads missing ones with downloadMany);
+    -- later openings read only the local file.
+    fn previewPath title fileId = cacheDir + "thumbs\\" + title + "_" + fileId + ".png",
+    fn previewUrl fileId = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w320",
 
     -- Downloads and unpacks the background package; returns the folder or undefined
     fn getPackage title fileId = (

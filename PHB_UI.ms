@@ -386,12 +386,25 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
         if reuse then thumbs = cached[2] else (
             PHB_disposeThumbs cached
             thumbs = #()
+            -- Previews not on disk yet: download them 8 at a time
+            local jobs = for it in PHB_items where it[2] != undefined and not doesFileExist (PHB_kh.previewPath it[1] it[2]) \
+                collect #(PHB_kh.previewUrl it[2], PHB_kh.previewPath it[1] it[2])
+            if jobs.count > 0 do (
+                progressStart ("Downloading " + jobs.count as string + " previews...")
+                for i = 1 to jobs.count by 8 do (
+                    local last = amin (i + 7) jobs.count
+                    PHB_kh.downloadMany (for j = i to last collect jobs[j])
+                    if not (progressUpdate (100.0 * last / jobs.count)) do exit
+                )
+                progressEnd()
+            )
             progressStart ("Loading " + PHB_kh.libraries[PHB_library][1] + " from Knowledge Hub...")
             for i = 1 to PHB_items.count do (
                 local item = PHB_items[i]
-                local file = PHB_kh.getPreview item[1] item[2]
+                -- A preview that failed to download (or was cancelled) shows as a gray tile until Refresh
+                local file = if item[2] != undefined then PHB_kh.previewPath item[1] item[2] else undefined
                 local thumb = undefined
-                if file != undefined do thumb = try (makeThumb file) catch (undefined)
+                if file != undefined and doesFileExist file do thumb = try (makeThumb file) catch (undefined)
                 append thumbs (if thumb != undefined then thumb else grayThumb())
                 if not (progressUpdate (100.0 * i / PHB_items.count)) do exit
             )
