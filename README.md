@@ -44,13 +44,16 @@ and continues from there as a separate project.
 
 ## Installation
 
-Run `Install_PhysiclHubBrowser.ms` via Scripting → Run Script. Then Customize → Customize User
-Interface → Toolbars → category `PHYSICL` → drag "Hub Browser" to a toolbar. A Knowledge Hub
-account is required.
+Drag `PhysiclHubBrowser_v<version>.mzp` into the 3ds Max viewport (or Scripting → Run Script →
+pick the .mzp). Without the package, run `Install_PhysiclHubBrowser.ms` from this folder the same
+way. Then Customize → Customize User Interface → Toolbars → category `PHYSICL` → drag
+"Hub Browser" to a toolbar. A Knowledge Hub account is required.
+
+To build the package: `powershell -ExecutionPolicy Bypass -File build_mzp.ps1` → `dist\`.
 
 The installer only writes its own files; an existing Backrounder / Physicl Asset Browser install
 is left as it is and can be removed by hand.
 
 ## Version
 
-v1.1.2 — see [CHANGELOG.md](CHANGELOG.md).
+v1.1.3 — see [CHANGELOG.md](CHANGELOG.md).

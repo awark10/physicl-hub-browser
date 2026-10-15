@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3
+
+- .mzp package for distribution (`build_mzp.ps1` builds `dist/PhysiclHubBrowser_v<version>.mzp`).
+
 ## 1.1.2
 
 - Fix "Bad free thunk local member index" error when previews were downloaded (opening a tab with new thumbnails).

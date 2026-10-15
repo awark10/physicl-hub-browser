@@ -3,3 +3,5 @@
 # 3ds Max autobackups / temp files from testing
 *.bak
 *.tmp
+# Built packages (build_mzp.ps1)
+dist/
