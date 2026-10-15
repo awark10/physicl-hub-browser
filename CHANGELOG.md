@@ -7,7 +7,7 @@
 
 ## 1.1
 
-- New tabs Grass, Buildings & Parts, Textures. Grass loads two Hub folders into one gallery, Buildings & Parts one; Textures is a placeholder ("Coming soon") until its Hub folder is added.
+- New tabs Grass, Buildings & Parts, Textures. Grass loads two Hub folders into one gallery, Buildings & Parts one.
 - Textures tab with a category list; the categories are the subfolders of Library > Textures, read from the Hub, so new ones appear without a script update.
 - Missing previews download 8 at a time over one reused connection (much faster first opening).
 - Toolbar category renamed to PHYSICL.
