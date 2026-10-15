@@ -14,6 +14,15 @@ if PHB_cache == undefined do PHB_cache = #()
 global PHB_loginRollout
 global PHB_category -- per library: selected entry of the category list (1 = All)
 if PHB_category == undefined do PHB_category = #()
+global PHB_catLists -- per library: categories read from the Hub, #(#(name, folderId), ...)
+if PHB_catLists == undefined do PHB_catLists = #()
+
+-- Categories of the current library: read from the Hub if it has a category parent folder,
+-- otherwise its fixed list (empty for most libraries)
+fn PHB_libCategories = (
+    if PHB_kh.categoryParentOf PHB_library != undefined and PHB_catLists[PHB_library] != undefined \
+        then PHB_catLists[PHB_library] else PHB_kh.categoriesOf PHB_library
+)
 
 -- ============================
 -- IMPORT
@@ -183,7 +192,24 @@ fn PHB_loadLibrary force:false = (
         PHB_items = cached[1]
         return true
     )
-    local folders = PHB_kh.foldersOf PHB_library
+    -- Categories from the subfolders of a parent folder, read again on every load/Refresh
+    local parent = PHB_kh.categoryParentOf PHB_library
+    if parent != undefined do (
+        local s = PHB_kh.fetchSubfolders parent
+        if s[1] == #unauthorized do (
+            if not (PHB_ensureLogin()) do return false
+            s = PHB_kh.fetchSubfolders parent
+        )
+        if s[1] != #ok do (
+            messageBox ("Could not load the categories:\n" + (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired")) title:"Physicl Hub Browser"
+            return false
+        )
+        local names = for c in s[2] collect c[1]
+        format "Physicl Hub Browser: % categories in %: %\n" s[2].count parent names
+        -- No subfolders found (or the page changed): use the parent folder itself
+        PHB_catLists[PHB_library] = if s[2].count > 0 then s[2] else #(#(PHB_kh.libraries[PHB_library][1], parent))
+    )
+    local folders = PHB_kh.foldersOf PHB_library cats:(PHB_libCategories())
     if folders.count == 0 do (
         -- Section without a Hub folder yet: nothing to fetch
         PHB_items = #()
@@ -307,7 +333,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     )
 
     fn updateCategories = (
-        local cats = PHB_kh.categoriesOf PHB_library
+        local cats = PHB_libCategories()
         local has = cats.count > 0
         lblCategory.visible = has
         ddlCategory.visible = has
@@ -343,7 +369,7 @@ rollout PHB_mainRollout "Physicl Hub Browser v1.1" width:1296 height:996
     fn fillList = (
         lvBackgrounds.Items.Clear()
         updateCategories()
-        local onHub = (PHB_kh.foldersOf PHB_library).count > 0
+        local onHub = (PHB_kh.foldersOf PHB_library cats:(PHB_libCategories())).count > 0
         btnImport.enabled = onHub
         btnRefresh.enabled = onHub
         if not onHub do (

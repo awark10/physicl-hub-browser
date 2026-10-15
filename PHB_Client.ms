@@ -126,20 +126,17 @@ struct PHB_KHClient (
     -- Knowledge Hub folders shown in the gallery: #(label, folderId), in tab order.
     -- folderId can also be an array of folderIds: their cards are shown together, folder by folder.
     -- folderId undefined = section not wired to the Hub yet; its tab shows "Coming soon".
-    -- An optional third element lists categories #(#(label, folderId), ...): the tab loads every
-    -- category folder and shows a category list above the gallery (folderId may again be an array).
+    -- An optional third element gives categories: the tab loads every category folder and shows a
+    -- category list above the gallery. Either a parent folderId, whose subfolders become the
+    -- categories (read from the Hub at load time), or a fixed list #(#(label, folderId), ...).
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
         -- Two folders under the same parent (1b736021-...) in one tab
         #("Grass", #("4d7cebe9-23f1-4df5-9cea-dfd350e972e8", "2076619a-29d3-4f64-9da7-4b5efb90fe76")),
         #("Buildings & Parts", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Library > ... > Buildings & Parts (parent 1b736021-...)
-        -- Library > Textures (5cb26050-...) is split into category subfolders; add them here as
-        -- #("Concrete", "<folderId>"), ... ("Coming soon" while the list is empty)
-        #("Textures", undefined, #(
-            #("Bricks", "b86423ba-ce47-47a9-a570-7f472a6982f2"),
-            #("Marble", "776d168d-27ce-48b1-bb3b-2a63c0252315")
-        ))
+        -- Library > Textures: each subfolder (Bricks, Marble, Roof...) is a category
+        #("Textures", undefined, "5cb26050-1de7-4edc-8f18-917ae1b81e64")
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
@@ -153,15 +150,22 @@ struct PHB_KHClient (
     -- LIBRARY LIST
     -- ============================
 
+    -- Fixed category list of library i (empty when it has none or reads them from the Hub)
     fn categoriesOf i = (
-        if libraries[i].count >= 3 then libraries[i][3] else #()
+        if libraries[i].count >= 3 and classOf libraries[i][3] == Array then libraries[i][3] else #()
     ),
 
-    -- Folders to fetch for library i: #(#(folderId, category index), ...); category 0 = no list
-    fn foldersOf i = (
+    -- Parent folderId whose subfolders are the categories of library i, or undefined
+    fn categoryParentOf i = (
+        if libraries[i].count >= 3 and classOf libraries[i][3] == String then libraries[i][3] else undefined
+    ),
+
+    -- Folders to fetch for library i: #(#(folderId, category index), ...); category 0 = no list.
+    -- cats: the categories to use (the ones read from the Hub); the fixed list by default.
+    fn foldersOf i cats:undefined = (
         fn ids f = (if classOf f == Array then f else if f == undefined then #() else #(f))
         local result = #()
-        local cats = categoriesOf i
+        if cats == undefined do cats = categoriesOf i
         if cats.count > 0 then (
             for c = 1 to cats.count do for id in (ids cats[c][2]) do append result #(id, c)
         ) else (
@@ -380,6 +384,40 @@ struct PHB_KHClient (
             -- The server may refresh the token on any request; keep the newest cookie
             if doesFileExist (sessionFile()) do saveSession()
             #(#ok, parseCards text)
+        ) catch (
+            lastError = "Network error: " + (getCurrentException())
+            #(#error, #())
+        )
+    ),
+
+    -- Subfolders of a Hub folder, read from its library page (the Hub has no JSON call for them):
+    -- every link /library/<parentId>/<id> with its text. Depends on the page markup, so the
+    -- caller logs what was found.
+    -- Returns #(#ok, #(#(name, folderId), ...)) | #(#unauthorized, #()) | #(#error, #())
+    fn fetchSubfolders parentId = (
+        lastError = ""
+        try (
+            local resp = (client.GetAsync (baseUrl + "/library/" + parentId)).Result
+            if isLoginRedirect resp do return #(#unauthorized, #())
+            local text = readBody resp
+            if not resp.IsSuccessStatusCode do (
+                lastError = "HTTP " + (statusOf resp) as string
+                return #(#error, #())
+            )
+            local pattern = "href=\"/library/" + parentId + "/([0-9a-fA-F-]{36})\"[^>]*>([^<]+)</a>"
+            local matches = (dotNetClass "System.Text.RegularExpressions.Regex").Matches text pattern
+            local decode = dotNetClass "System.Net.WebUtility"
+            local found = #()
+            local ids = #()
+            for i = 0 to matches.Count - 1 do (
+                local m = matches.Item[i]
+                local id = (m.Groups.Item[1]).Value
+                if findItem ids id == 0 do (
+                    append ids id
+                    append found #(trimLeft (trimRight (decode.HtmlDecode (m.Groups.Item[2]).Value)), id)
+                )
+            )
+            #(#ok, found)
         ) catch (
             lastError = "Network error: " + (getCurrentException())
             #(#error, #())

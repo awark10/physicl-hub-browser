@@ -3,7 +3,7 @@
 ## 1.1
 
 - New tabs Grass, Buildings & Parts, Textures. Grass loads two Hub folders into one gallery, Buildings & Parts one; Textures is a placeholder ("Coming soon") until its Hub folder is added.
-- Category list for libraries split into subfolders (Textures; categories to be added).
+- Textures tab with a category list; the categories are the subfolders of Library > Textures, read from the Hub, so new ones appear without a script update.
 - Toolbar category renamed to PHYSICL.
 - Larger dialog (1296x996, shrinks to fit smaller screens) and gallery thumbnails (307x172, three evenly spaced columns); the gallery is owner-drawn so thumbnails can exceed 256 px.
 - Every import ends with one window saying what was imported (objects, textures, missing textures) or why it failed.
