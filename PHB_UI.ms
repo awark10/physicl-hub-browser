@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.1.1"
+global PHB_version = "1.1.2"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -208,7 +208,8 @@ fn PHB_loadLibrary force:false = (
             messageBox ("Could not load the categories:\n" + (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired")) title:"Physicl Hub Browser"
             return false
         )
-        local names = for c in s[2] collect c[1]
+        local names = #()
+        for c in s[2] do append names c[1]
         format "Physicl Hub Browser: % categories in %: %\n" s[2].count parent names
         -- No subfolders found (or the page changed): use the parent folder itself
         PHB_catLists[PHB_library] = if s[2].count > 0 then s[2] else #(#(PHB_kh.libraries[PHB_library][1], parent))
@@ -244,6 +245,31 @@ fn PHB_loadLibrary force:false = (
     PHB_disposeThumbs PHB_cache[PHB_library]
     PHB_cache[PHB_library] = #(PHB_items, undefined, settings) -- thumbnails are (re)built by fillList
     true
+)
+
+-- Downloads the previews of items that are not on disk yet, 8 at a time.
+-- Kept outside the rollout with plain loops: nested for/collect over locals inside a rollout
+-- function fails in 3ds Max 2022 ("Bad free thunk local member index").
+fn PHB_downloadPreviews items = (
+    local jobs = #()
+    local p, first, last, batch, cancelled
+    for it in items where it[2] != undefined do (
+        p = PHB_kh.previewPath it[1] it[2]
+        if not doesFileExist p do append jobs #(PHB_kh.previewUrl it[2], p)
+    )
+    if jobs.count == 0 do return ok
+    progressStart ("Downloading " + jobs.count as string + " previews...")
+    first = 1
+    cancelled = false
+    while first <= jobs.count and not cancelled do (
+        last = amin (first + 7) jobs.count
+        batch = #()
+        for j = first to last do append batch jobs[j]
+        PHB_kh.downloadMany batch
+        cancelled = not (progressUpdate (100.0 * last / jobs.count))
+        first = last + 1
+    )
+    progressEnd()
 )
 
 -- ============================
@@ -353,7 +379,9 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Fills the list with the thumbnails of the selected category (all of them without a list)
     fn showItems = (
         local cat = if ddlCategory.visible then ddlCategory.selection - 1 else 0
-        shown = for i = 1 to thumbs.count where cat == 0 or PHB_items[i][4] == cat collect i
+        shown = #()
+        for i = 1 to thumbs.count do
+            if cat == 0 or PHB_items[i][4] == cat do append shown i
         lvBackgrounds.Items.Clear()
         -- The ImageList only gives every cell its height; drawItem paints the thumbnails
         local imgList = dotNetObject "System.Windows.Forms.ImageList"
@@ -390,18 +418,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         if reuse then thumbs = cached[2] else (
             PHB_disposeThumbs cached
             thumbs = #()
-            -- Previews not on disk yet: download them 8 at a time
-            local jobs = for it in PHB_items where it[2] != undefined and not doesFileExist (PHB_kh.previewPath it[1] it[2]) \
-                collect #(PHB_kh.previewUrl it[2], PHB_kh.previewPath it[1] it[2])
-            if jobs.count > 0 do (
-                progressStart ("Downloading " + jobs.count as string + " previews...")
-                for i = 1 to jobs.count by 8 do (
-                    local last = amin (i + 7) jobs.count
-                    PHB_kh.downloadMany (for j = i to last collect jobs[j])
-                    if not (progressUpdate (100.0 * last / jobs.count)) do exit
-                )
-                progressEnd()
-            )
+            PHB_downloadPreviews PHB_items
             progressStart ("Loading " + PHB_kh.libraries[PHB_library][1] + " from Knowledge Hub...")
             for i = 1 to PHB_items.count do (
                 local item = PHB_items[i]

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+
+- Fix "Bad free thunk local member index" error when previews were downloaded (opening a tab with new thumbnails).
+
 ## 1.1.1
 
 - The dialog title shows the full version (v1.1.1); it is bumped with every change from now on.

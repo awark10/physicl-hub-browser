@@ -482,14 +482,17 @@ struct PHB_KHClient (
     -- then collected; GetAsync completes only when the whole body is in memory. Failures are
     -- logged and leave the file missing.
     fn downloadMany jobs = (
-        local tasks = for j in jobs collect (try (dl.GetAsync j[1]) catch (undefined))
+        -- Locals declared up front: locals inside loops/try trip 3ds Max 2022 ("Bad free thunk")
+        local tasks = #()
+        local saved, resp
+        for j in jobs do append tasks (try (dl.GetAsync j[1]) catch (undefined))
         for k = 1 to jobs.count do (
-            local saved = false
+            saved = false
             if tasks[k] != undefined do saved = try (
-                local resp = tasks[k].Result
-                local done = saveResponse resp jobs[k][2]
+                resp = tasks[k].Result
+                saved = saveResponse resp jobs[k][2]
                 resp.Dispose()
-                done
+                saved
             ) catch (
                 lastError = "Download failed: " + (getCurrentException())
                 false
