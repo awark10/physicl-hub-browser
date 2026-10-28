@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.0"
+global PHB_version = "1.2.1"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -284,7 +284,12 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     local thumbW = 301
     local thumbH = 169
     local thumbs = #() -- Bitmaps of the library on screen, same order as PHB_items
-    local shown = #() -- PHB_items indices of the gallery entries (category and search applied)
+    local shown = #() -- PHB_items indices of the gallery entries (selected category)
+    local galleryItems = #() -- item arrays of the gallery entries, in list order
+    local galleryThumbs = #() -- their bitmaps, same order
+    local searching = false -- the gallery shows search results from the whole Hub
+    local allLists = false -- the card lists of every library are in memory (search can run live)
+    local pool -- thumbnails made for search results: preview path -> Bitmap
     local sideW = 200 -- width of the library sidebar
 
     -- Top bar tools: #(caption, function or undefined). A tool without a function says
@@ -421,30 +426,144 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         tvLib.SelectedNode = node
     )
 
-    -- Fills the list with the thumbnails of the selected category and search text
-    fn showItems = (
-        local sel = PHB_category[PHB_library]
-        local cat = if sel == undefined then 0 else sel - 1
-        local search = trimLeft (trimRight tbSearch.Text)
-        local pattern = "*" + search + "*"
-        shown = #()
-        for i = 1 to thumbs.count do
-            if (cat == 0 or PHB_items[i][4] == cat) and (search == "" or matchPattern PHB_items[i][1] pattern:pattern) do
-                append shown i
+    -- Puts entries into the list: item arrays and bitmaps in list order, captions under the thumbnails
+    fn fillGallery items bmps captions = (
+        galleryItems = items
+        galleryThumbs = bmps
         lvBackgrounds.Items.Clear()
         -- The ImageList only gives every cell its height; drawItem paints the thumbnails
         local imgList = dotNetObject "System.Windows.Forms.ImageList"
         imgList.ImageSize = dotNetObject "System.Drawing.Size" 256 thumbH
         lvBackgrounds.LargeImageList = imgList
         setIconSpacing()
+        local lvi
         lvBackgrounds.BeginUpdate()
-        for i in shown do (
-            local lvi = dotNetObject "System.Windows.Forms.ListViewItem" PHB_items[i][1]
+        for c in captions do (
+            lvi = dotNetObject "System.Windows.Forms.ListViewItem" c
             lvi.ImageIndex = 0
             lvBackgrounds.Items.Add lvi
         )
         lvBackgrounds.EndUpdate()
+    )
+
+    -- Fills the list with the thumbnails of the selected library and category
+    fn showItems = (
+        local sel = PHB_category[PHB_library]
+        local cat = if sel == undefined then 0 else sel - 1
+        local items = #()
+        local bmps = #()
+        local captions = #()
+        shown = #()
+        for i = 1 to thumbs.count do
+            if cat == 0 or PHB_items[i][4] == cat do append shown i
+        for i in shown do (
+            append items PHB_items[i]
+            append bmps thumbs[i]
+            append captions PHB_items[i][1]
+        )
+        fillGallery items bmps captions
         lblStatus.text = (shown.count as string) + " items"
+    )
+
+    -- ============================
+    -- Search over the whole Hub
+    -- ============================
+
+    -- "Materials > Roof" for an item of library lib
+    fn sourceName lib item = (
+        local name = PHB_kh.libraries[lib][1]
+        local cats = PHB_categoriesFor lib
+        if item.count >= 4 and item[4] > 0 and item[4] <= cats.count do name += " > " + cats[item[4]][1]
+        name
+    )
+
+    -- Loads the card lists of every library not in memory yet (lists only: thumbnails are made for
+    -- search matches alone). Returns true when all of them are loaded.
+    fn loadAllLists = (
+        local prev = PHB_library
+        local all = true
+        local c, settings
+        for lib = 1 to PHB_kh.libraries.count do (
+            c = PHB_cache[lib]
+            settings = PHB_kh.libraries[lib] as string
+            if c == undefined or c.count < 3 or c[3] != settings do (
+                PHB_library = lib
+                if PHB_loadLibrary() then fillChildren (tvLib.Nodes.Item[lib - 1]) lib else all = false
+            )
+        )
+        PHB_library = prev
+        if PHB_cache[prev] != undefined do PHB_items = PHB_cache[prev][1]
+        all
+    )
+
+    -- Thumbnail of item idx of library lib: the library's own bitmaps when it has been opened,
+    -- otherwise one made for a search (kept in pool while the dialog is open); undefined if none yet
+    fn searchThumb lib idx = (
+        local c = PHB_cache[lib]
+        local item = c[1][idx]
+        if lib == PHB_library and thumbs.count == PHB_items.count do return thumbs[idx]
+        if classOf c[2] == Array and c[2].count == c[1].count and (c[2].count == 0 or c[2][1].Width == thumbW) do
+            return c[2][idx]
+        if item[2] == undefined do return undefined
+        local p = PHB_kh.previewPath item[1] item[2]
+        if hasDictValue pool p then pool[p] else undefined
+    )
+
+    -- Shows every card of every library whose name contains the search text.
+    -- load:false (typing) only searches the lists already in memory.
+    fn runSearch load:true = (
+        local text = trimLeft (trimRight tbSearch.Text)
+        if text == "" do return ok
+        if load and not allLists do allLists = loadAllLists()
+        if pool == undefined do pool = Dictionary #string
+        local pattern = "*" + text + "*"
+        local hits = #() -- #(library, index)
+        local missing = #()
+        local items = #()
+        local bmps = #()
+        local captions = #()
+        local c, it, p, bmp
+        for lib = 1 to PHB_kh.libraries.count do (
+            c = PHB_cache[lib]
+            if c != undefined do
+                for i = 1 to c[1].count do
+                    if matchPattern c[1][i][1] pattern:pattern do append hits #(lib, i)
+        )
+        -- Matches without a thumbnail yet: download the missing previews, then make the thumbnails
+        for h in hits do (
+            it = PHB_cache[h[1]][1][h[2]]
+            if it[2] != undefined and searchThumb h[1] h[2] == undefined do append missing it
+        )
+        if missing.count > 0 do (
+            PHB_downloadPreviews missing
+            for m in missing do (
+                p = PHB_kh.previewPath m[1] m[2]
+                bmp = undefined
+                if doesFileExist p do bmp = try (makeThumb p) catch (undefined)
+                if bmp != undefined do pool[p] = bmp
+            )
+        )
+        for h in hits do (
+            it = PHB_cache[h[1]][1][h[2]]
+            bmp = searchThumb h[1] h[2]
+            append items it
+            append bmps (if bmp != undefined then bmp else grayThumb())
+            append captions (it[1] + "\n" + (sourceName h[1] it))
+        )
+        -- The sidebar is dimmed and has no selection while results are shown
+        searching = true
+        tvLib.SelectedNode = undefined
+        tvLib.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 120 120 120
+        fillGallery items bmps captions
+        lblStatus.text = (hits.count as string) + " results"
+    )
+
+    -- Back to the selected sidebar item
+    fn endSearch = (
+        searching = false
+        tvLib.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 220 220 220
+        selectNode()
+        showItems()
     )
 
     fn fillList = (
@@ -455,6 +574,8 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         if not onHub do (
             thumbs = #()
             shown = #()
+            galleryItems = #()
+            galleryThumbs = #()
             lblStatus.text = "Coming soon"
             return ok
         )
@@ -495,8 +616,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         brush.Dispose()
         local x = b.X + (b.Width - thumbW) / 2
         local y = b.Y + 2
-        local idx = shown[e.ItemIndex + 1]
-        local bmp = if idx != undefined then thumbs[idx] else undefined
+        local bmp = galleryThumbs[e.ItemIndex + 1]
         if bmp != undefined do g.DrawImage bmp x y thumbW thumbH
         local fmt = dotNetObject "System.Drawing.StringFormat"
         fmt.Alignment = (dotNetClass "System.Drawing.StringAlignment").Center
@@ -535,6 +655,8 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Click on a library: expand/collapse its categories and show all of it.
     -- Click on a category: show only that category.
     fn onNodeClick node = (
+        -- A click in the sidebar leaves the search (TextChanged ends it)
+        if tbSearch.Text != "" do tbSearch.Text = ""
         local parts = filterString (node.Tag as string) ","
         local i = parts[1] as integer
         local c = parts[2] as integer
@@ -567,7 +689,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
             return false
         )
         local idx = (lvBackgrounds.SelectedItems.Item[0]).Index + 1
-        PHB_importBackground PHB_items[shown[idx]]
+        PHB_importBackground galleryItems[idx]
     )
 
     on PHB_mainRollout open do (
@@ -609,20 +731,33 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         fillList()
     )
 
+    on PHB_mainRollout close do (
+        -- Thumbnails made for search results belong to this dialog only
+        if pool != undefined do for k in pool.keys do try (pool[k].Dispose()) catch ()
+        pool = undefined
+    )
+
     on tvLib NodeMouseClick s e do onNodeClick e.Node
     on btnTool1 pressed do runTool 1
     on btnTool2 pressed do runTool 2
     on btnTool3 pressed do runTool 3
     on btnTool4 pressed do runTool 4
-    on tbSearch TextChanged s e do showItems()
+    -- Typing searches live once every list is in memory; until then Enter or Find loads them
+    on tbSearch TextChanged s e do (
+        if trimLeft (trimRight tbSearch.Text) == "" then (if searching do endSearch())
+        else if allLists do runSearch load:false
+    )
     on tbSearch KeyDown s e do (
         if e.KeyCode == (dotNetClass "System.Windows.Forms.Keys").Enter do (
             e.SuppressKeyPress = true
-            showItems()
+            runSearch()
         )
     )
-    on btnFind pressed do showItems()
+    on btnFind pressed do (
+        if trimLeft (trimRight tbSearch.Text) == "" then (if searching do endSearch()) else runSearch()
+    )
     on btnRefresh pressed do (
+        if tbSearch.Text != "" do tbSearch.Text = ""
         if PHB_loadLibrary force:true do (
             fillChildren (tvLib.Nodes.Item[PHB_library - 1]) PHB_library
             fillList()

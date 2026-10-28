@@ -33,8 +33,11 @@ and continues from there as a separate project.
   cards as JSON; only `published` cards are shown. Each library is kept in memory between switches
   until **Refresh**. An expired session shows the login dialog again. A library entry without a
   folder shows "Coming soon".
-- **Search:** the box at the top right filters the gallery by name as you type (Enter or Find do
-  the same); clearing it shows everything again.
+- **Search:** the box at the top right searches the whole Hub by name. The first search (Enter or
+  Find) loads the card lists of every library once per 3ds Max session; after that results update
+  as you type. Results show where each card comes from ("Materials > Roof"), previews are
+  downloaded only for matches, and the sidebar is dimmed while results are shown. Clearing the box
+  or clicking a sidebar item goes back to the selected library.
 - **Tool buttons:** Add Camera, Add Sun, Add Render preset EXTR / PUB are placeholders for now
   ("coming soon"); each is an entry in `tools` in `PHB_UI.ms` waiting for its function.
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)
@@ -61,4 +64,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.0 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.1 — see [CHANGELOG.md](CHANGELOG.md).

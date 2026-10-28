@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- Search covers the whole Hub, not just the selected sidebar item: the first search loads every card list (once per session), results show their source ("Materials > Roof") and live filtering follows as you type. Previews are downloaded only for matches. Clearing the search or clicking the sidebar returns to the selected library.
+
 ## 1.2.0
 
 - New layout: a library sidebar on the left replaces the tab row. Backplates, Decals, Models (Buildings, Grass, Hedges) and Materials (categories from the Hub) — clicking a library shows all of it and opens its sub-items, clicking a sub-item shows that category.
