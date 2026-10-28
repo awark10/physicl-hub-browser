@@ -496,6 +496,16 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         all
     )
 
+    -- True when every library's card list is already in memory (e.g. from an earlier opening)
+    fn listsInMemory = (
+        local c
+        for lib = 1 to PHB_kh.libraries.count do (
+            c = PHB_cache[lib]
+            if c == undefined or c.count < 3 or c[3] != (PHB_kh.libraries[lib] as string) do return false
+        )
+        true
+    )
+
     -- Thumbnail of item idx of library lib: the library's own bitmaps when it has been opened,
     -- otherwise one made for a search (kept in pool while the dialog is open); undefined if none yet
     fn searchThumb lib idx = (
@@ -745,7 +755,10 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Typing searches live once every list is in memory; until then Enter or Find loads them
     on tbSearch TextChanged s e do (
         if trimLeft (trimRight tbSearch.Text) == "" then (if searching do endSearch())
-        else if allLists do runSearch load:false
+        else (
+            if not allLists do allLists = listsInMemory()
+            if allLists do runSearch load:false
+        )
     )
     on tbSearch KeyDown s e do (
         if e.KeyCode == (dotNetClass "System.Windows.Forms.Keys").Enter do (
