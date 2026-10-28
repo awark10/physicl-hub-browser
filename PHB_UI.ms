@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.2"
+global PHB_version = "1.2.3"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)

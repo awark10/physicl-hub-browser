@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.3
+
+- Add Sun works the same way as Add Camera: it imports the Physicl sun package from Google Drive.
+
 ## 1.2.2
 
 - Add Camera works: it downloads the Physicl camera package from Google Drive and imports it like a Hub card. The top bar buttons are defined in `tools` in PHB_Client.ms.

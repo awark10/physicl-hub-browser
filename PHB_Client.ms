@@ -144,7 +144,7 @@ struct PHB_KHClient (
     -- id imports that package like a Hub card (merge + textures); undefined = "coming soon".
     tools = #(
         #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),
-        #("Add Sun", "Sun", undefined),
+        #("Add Sun", "Sun", "1-OWeZQD53jryWFMM5wmW1hm1W70S-D9D"),
         #("Add Render preset EXTR", "Render preset EXTR", undefined),
         #("Add Render preset PUB", "Render preset PUB", undefined)
     ),
