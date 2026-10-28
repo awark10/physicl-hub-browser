@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.1.6"
+global PHB_version = "1.2.0"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -10,7 +10,7 @@ global PHB_loginOk = false
 global PHB_library -- index into PHB_kh.libraries; kept between openings
 if PHB_library == undefined do PHB_library = 1
 global PHB_mainRollout
--- Per library: #(items, thumbnails, settings). Filled on first visit, reused on tab switches and
+-- Per library: #(items, thumbnails, settings). Filled on first visit, reused on library switches and
 -- reopenings, rebuilt by Refresh or when the library's settings in PHB_Client.ms changed (reinstall).
 global PHB_cache
 if PHB_cache == undefined do PHB_cache = #()
@@ -20,12 +20,13 @@ if PHB_category == undefined do PHB_category = #()
 global PHB_catLists -- per library: categories read from the Hub, #(#(name, folderId), ...)
 if PHB_catLists == undefined do PHB_catLists = #()
 
--- Categories of the current library: read from the Hub if it has a category parent folder,
--- otherwise its fixed list (empty for most libraries)
-fn PHB_libCategories = (
-    if PHB_kh.categoryParentOf PHB_library != undefined and PHB_catLists[PHB_library] != undefined \
-        then PHB_catLists[PHB_library] else PHB_kh.categoriesOf PHB_library
+-- Categories of library i: read from the Hub if it has a category parent folder (Materials),
+-- otherwise its fixed list (Models), empty for the others
+fn PHB_categoriesFor i = (
+    if PHB_kh.categoryParentOf i != undefined and PHB_catLists[i] != undefined \
+        then PHB_catLists[i] else PHB_kh.categoriesOf i
 )
+fn PHB_libCategories = PHB_categoriesFor PHB_library
 
 -- ============================
 -- IMPORT
@@ -280,44 +281,56 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
 (
     -- Gallery thumbnail size (16:9). The gallery is owner-drawn because a .NET ImageList
     -- cannot hold images wider than 256 px; the ImageList only sizes the cells.
-    local thumbW = 307
-    local thumbH = 173
+    local thumbW = 301
+    local thumbH = 169
     local thumbs = #() -- Bitmaps of the library on screen, same order as PHB_items
-    local shown = #() -- PHB_items indices of the gallery entries (the selected category)
+    local shown = #() -- PHB_items indices of the gallery entries (category and search applied)
+    local sideW = 200 -- width of the library sidebar
 
-    -- Library tabs; one per entry in PHB_kh.libraries, same order
-    checkbutton tabLib1 "BACKPLATES" pos:[20,6] width:120 height:31
-    checkbutton tabLib2 "DECALS" pos:[142,6] width:120 height:31
-    checkbutton tabLib3 "GRASS" pos:[264,6] width:120 height:31
-    checkbutton tabLib4 "BUILDINGS & PARTS" pos:[386,6] width:160 height:31
-    checkbutton tabLib5 "TEXTURES" pos:[548,6] width:120 height:31
-    -- Category list, only for libraries that define categories
-    label lblCategory "Category:" pos:[700,14] visible:false
-    dropdownlist ddlCategory "" pos:[756,10] width:220 visible:false
+    -- Top bar tools: #(caption, function or undefined). A tool without a function says
+    -- "coming soon"; give it a function (fn with no arguments) to wire it.
+    local tools = #(
+        #("Add Camera", undefined),
+        #("Add Sun", undefined),
+        #("Add Render preset EXTR", undefined),
+        #("Add Render preset PUB", undefined))
+
     -- Positions below are for the full 1296x996 size; layout moves them for smaller screens
-    groupBox grpLib "Knowledge Hub Library" pos:[10,42] width:1276 height:890
-    dotNetControl lvBackgrounds "System.Windows.Forms.ListView" pos:[20,60] width:1256 height:862
-    label lblStatus "" pos:[20,936] width:240
-    button btnRefresh "Refresh" pos:[20,953] width:96 height:31
-    button btnImport "IMPORT SELECTED" width:240 height:48 pos:[528,941]
-    button btnLogout "Sign out" pos:[1180,953] width:96 height:31
+    dotNetControl lblTitle "System.Windows.Forms.Label" pos:[10,8] width:200 height:30
+    button btnTool1 "Add Camera" pos:[230,8] width:100 height:28
+    button btnTool2 "Add Sun" pos:[336,8] width:100 height:28
+    button btnTool3 "Add Render preset EXTR" pos:[442,8] width:170 height:28
+    button btnTool4 "Add Render preset PUB" pos:[618,8] width:170 height:28
+    dotNetControl tbSearch "System.Windows.Forms.TextBox" pos:[990,11] width:200 height:22
+    button btnFind "Find" pos:[1196,8] width:90 height:28
+    dotNetControl tvLib "System.Windows.Forms.TreeView" pos:[10,44] width:200 height:882
+    dotNetControl lvBackgrounds "System.Windows.Forms.ListView" pos:[220,44] width:1066 height:882
+    label lblStatus "" pos:[220,932] width:240
+    button btnRefresh "Refresh" pos:[220,949] width:96 height:31
+    button btnImport "IMPORT SELECTED" width:240 height:48 pos:[633,937]
+    button btnLogout "Sign out" pos:[1190,949] width:96 height:31
 
     -- Fits the controls to the dialog size picked by PHB_dialogSize. Fewer rows show on a lower
     -- screen; on a narrower one the thumbnails shrink so a row still holds three.
     fn layout w h = (
-        local listW = w - 40
-        local listH = h - 134
-        grpLib.width = w - 20
-        grpLib.height = listH + 28
+        local listX = sideW + 20
+        local listW = w - listX - 10
+        local listH = h - 114
+        tvLib.height = listH
         lvBackgrounds.width = listW
         lvBackgrounds.height = listH
-        local y = listH + 74
-        lblStatus.pos = [20, y]
-        btnRefresh.pos = [20, y + 17]
-        btnImport.pos = [(w - 240) / 2, y + 5]
-        btnLogout.pos = [w - 116, y + 17]
+        local y = 44 + listH
+        lblStatus.pos = [listX, y + 6]
+        btnRefresh.pos = [listX, y + 23]
+        btnImport.pos = [listX + (listW - 240) / 2, y + 11]
+        btnLogout.pos = [w - 106, y + 23]
+        btnFind.pos = [w - 100, 8]
+        -- The search box takes what is left right of the tool buttons (up to 200 px)
+        local searchW = amax 100 (amin 200 (w - 106 - 798))
+        tbSearch.width = searchW
+        tbSearch.pos = [w - 106 - searchW, 11]
         local scrollW = (dotNetClass "System.Windows.Forms.SystemInformation").VerticalScrollBarWidth
-        thumbW = amin 307 ((listW - 6 - scrollW) / 3 - 40)
+        thumbW = amin 301 ((listW - 6 - scrollW) / 3 - 40)
         thumbH = thumbW * 9 / 16
     )
 
@@ -362,26 +375,62 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         )
     )
 
-    fn updateCategories = (
-        local cats = PHB_libCategories()
-        local has = cats.count > 0
-        lblCategory.visible = has
-        ddlCategory.visible = has
-        if has do (
-            local names = #("All")
-            for c in cats do append names c[1]
-            ddlCategory.items = names
-            local sel = PHB_category[PHB_library]
-            ddlCategory.selection = if sel != undefined and sel <= names.count then sel else 1
-        )
+    -- ============================
+    -- Sidebar: one node per library, child nodes for its categories (Models > Buildings...)
+    -- Node.Tag = "library,category": category 0 = the library itself (all of it)
+    -- ============================
+
+    fn nodeText name hasChildren expanded = (
+        if not hasChildren then name else ((if expanded then "v " else "> ") + name)
     )
 
-    -- Fills the list with the thumbnails of the selected category (all of them without a list)
+    -- (Re)creates the child nodes of library i from its categories; keeps the node's expanded state
+    fn fillChildren node i = (
+        local cats = PHB_categoriesFor i
+        node.Nodes.Clear()
+        for c = 1 to cats.count do (
+            local child = node.Nodes.Add cats[c][1]
+            child.Tag = (i as string) + "," + (c as string)
+        )
+        -- Materials reads its categories from the Hub on first load; mark it as expandable before that
+        local expandable = cats.count > 0 or PHB_kh.categoryParentOf i != undefined
+        node.Text = nodeText PHB_kh.libraries[i][1] expandable node.IsExpanded
+    )
+
+    fn buildTree = (
+        tvLib.BeginUpdate()
+        tvLib.Nodes.Clear()
+        for i = 1 to PHB_kh.libraries.count do (
+            local node = tvLib.Nodes.Add PHB_kh.libraries[i][1]
+            node.Tag = (i as string) + ",0"
+            fillChildren node i
+        )
+        tvLib.EndUpdate()
+    )
+
+    -- Highlights the node of the current library and category
+    fn selectNode = (
+        local sel = PHB_category[PHB_library]
+        local cat = if sel == undefined then 0 else sel - 1
+        local node = tvLib.Nodes.Item[PHB_library - 1]
+        if cat > 0 and cat <= node.Nodes.Count then (
+            node.Expand()
+            node.Text = nodeText PHB_kh.libraries[PHB_library][1] true true
+            node = node.Nodes.Item[cat - 1]
+        )
+        tvLib.SelectedNode = node
+    )
+
+    -- Fills the list with the thumbnails of the selected category and search text
     fn showItems = (
-        local cat = if ddlCategory.visible then ddlCategory.selection - 1 else 0
+        local sel = PHB_category[PHB_library]
+        local cat = if sel == undefined then 0 else sel - 1
+        local search = trimLeft (trimRight tbSearch.Text)
+        local pattern = "*" + search + "*"
         shown = #()
         for i = 1 to thumbs.count do
-            if cat == 0 or PHB_items[i][4] == cat do append shown i
+            if (cat == 0 or PHB_items[i][4] == cat) and (search == "" or matchPattern PHB_items[i][1] pattern:pattern) do
+                append shown i
         lvBackgrounds.Items.Clear()
         -- The ImageList only gives every cell its height; drawItem paints the thumbnails
         local imgList = dotNetObject "System.Windows.Forms.ImageList"
@@ -400,7 +449,6 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
 
     fn fillList = (
         lvBackgrounds.Items.Clear()
-        updateCategories()
         local onHub = (PHB_kh.foldersOf PHB_library cats:(PHB_libCategories())).count > 0
         btnImport.enabled = onHub
         btnRefresh.enabled = onHub
@@ -461,23 +509,56 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         e.DrawDefault = false
     )
 
-    fn showTab i = (
-        tabLib1.checked = (i == 1)
-        tabLib2.checked = (i == 2)
-        tabLib3.checked = (i == 3)
-        tabLib4.checked = (i == 4)
-        tabLib5.checked = (i == 5)
+    -- Shows library i, category sel (1 = all of it), loading the library when it changes
+    fn showSource i sel = (
+        if i != PHB_library do (
+            local prev = PHB_library
+            PHB_library = i
+            if not (PHB_loadLibrary()) do (
+                PHB_library = prev
+                selectNode()
+                return false
+            )
+            PHB_category[i] = sel
+            -- Categories read from the Hub (Materials) are known only now
+            fillChildren (tvLib.Nodes.Item[i - 1]) i
+            fillList()
+            selectNode()
+            return true
+        )
+        PHB_category[i] = sel
+        showItems()
+        selectNode()
+        true
     )
 
-    fn switchLibrary i = (
-        showTab i -- clicking the active tab keeps it pressed
-        if i == PHB_library do return ok
-        local prev = PHB_library
-        PHB_library = i
-        if PHB_loadLibrary() then fillList() else (
-            PHB_library = prev
-            showTab prev
+    -- Click on a library: expand/collapse its categories and show all of it.
+    -- Click on a category: show only that category.
+    fn onNodeClick node = (
+        local parts = filterString (node.Tag as string) ","
+        local i = parts[1] as integer
+        local c = parts[2] as integer
+        if c == 0 then (
+            local wasExpanded = node.IsExpanded
+            showSource i 1
+            -- showSource may have rebuilt the children; read the node again
+            local n = tvLib.Nodes.Item[i - 1]
+            if n.Nodes.Count > 0 do (
+                if wasExpanded then n.Collapse() else n.Expand()
+                n.Text = nodeText PHB_kh.libraries[i][1] true n.IsExpanded
+            )
+            tvLib.SelectedNode = n
+        ) else (
+            -- showSource selects the category node (the clicked node may have been rebuilt)
+            showSource i (c + 1)
         )
+    )
+
+    fn runTool t = (
+        local f = tools[t][2]
+        if f == undefined then
+            messageBox (tools[t][1] + ": coming soon.") title:"Physicl Hub Browser"
+        else f()
     )
 
     fn importSelected = (
@@ -491,31 +572,63 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
 
     on PHB_mainRollout open do (
         PHB_mainRollout.title = "Physicl Hub Browser v" + PHB_version
-        lvBackgrounds.View = (dotNetClass "System.Windows.Forms.View").LargeIcon
-        lvBackgrounds.MultiSelect = false
-        lvBackgrounds.HideSelection = false
-        lvBackgrounds.OwnerDraw = true
         try (layout PHB_mainRollout.width PHB_mainRollout.height) catch (
             format "Physicl Hub Browser: could not fit the dialog to the screen: %\n" (getCurrentException())
         )
         local drawingColor = dotNetClass "System.Drawing.Color"
-        lvBackgrounds.BackColor = drawingColor.FromArgb 40 40 40
-        lvBackgrounds.ForeColor = drawingColor.FromArgb 220 220 220
+        local dark = drawingColor.FromArgb 40 40 40
+        local light = drawingColor.FromArgb 220 220 220
+        -- The title label sits on the dialog itself, so it takes the dialog's (theme) background
+        local bg = (colorMan.getColor #background) * 255
+        lblTitle.BackColor = drawingColor.FromArgb (bg.x as integer) (bg.y as integer) (bg.z as integer)
+        lblTitle.ForeColor = light
+        lblTitle.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 13.0
+        lblTitle.Text = "Knowledge Hub Library"
 
-        showTab PHB_library
+        tvLib.BackColor = dark
+        tvLib.ForeColor = light
+        tvLib.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 12.0
+        tvLib.BorderStyle = (dotNetClass "System.Windows.Forms.BorderStyle").None
+        tvLib.ShowLines = false
+        tvLib.ShowPlusMinus = false
+        tvLib.ShowRootLines = false
+        tvLib.FullRowSelect = true
+        tvLib.HideSelection = false
+        tvLib.Indent = 18
+        tvLib.ItemHeight = 28
+
+        lvBackgrounds.View = (dotNetClass "System.Windows.Forms.View").LargeIcon
+        lvBackgrounds.MultiSelect = false
+        lvBackgrounds.HideSelection = false
+        lvBackgrounds.OwnerDraw = true
+        lvBackgrounds.BackColor = dark
+        lvBackgrounds.ForeColor = light
+
+        buildTree()
+        selectNode()
         fillList()
     )
 
-    on tabLib1 changed st do switchLibrary 1
-    on tabLib2 changed st do switchLibrary 2
-    on tabLib3 changed st do switchLibrary 3
-    on tabLib4 changed st do switchLibrary 4
-    on tabLib5 changed st do switchLibrary 5
-    on ddlCategory selected i do (
-        PHB_category[PHB_library] = i
-        showItems()
+    on tvLib NodeMouseClick s e do onNodeClick e.Node
+    on btnTool1 pressed do runTool 1
+    on btnTool2 pressed do runTool 2
+    on btnTool3 pressed do runTool 3
+    on btnTool4 pressed do runTool 4
+    on tbSearch TextChanged s e do showItems()
+    on tbSearch KeyDown s e do (
+        if e.KeyCode == (dotNetClass "System.Windows.Forms.Keys").Enter do (
+            e.SuppressKeyPress = true
+            showItems()
+        )
     )
-    on btnRefresh pressed do (if PHB_loadLibrary force:true do fillList())
+    on btnFind pressed do showItems()
+    on btnRefresh pressed do (
+        if PHB_loadLibrary force:true do (
+            fillChildren (tvLib.Nodes.Item[PHB_library - 1]) PHB_library
+            fillList()
+            selectNode()
+        )
+    )
     on btnImport pressed do importSelected()
     on lvBackgrounds DoubleClick s a do importSelected()
     on lvBackgrounds DrawItem s e do (try (drawItem e) catch (e.DrawDefault = true))

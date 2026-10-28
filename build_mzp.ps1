@@ -18,7 +18,7 @@ try {
     @(
         # No "version" line: mzp.run only accepts a plain number there, not 1.1.4
         "name ""Physicl Hub Browser v$version"""
-        'description "Backplates, decals, grass, buildings and textures from the Physicl Knowledge Hub"'
+        'description "Backplates, decals, models and materials from the Physicl Knowledge Hub"'
         'run "Install_PhysiclHubBrowser.ms"'
         'drop "Install_PhysiclHubBrowser.ms"'
         'clear temp on MAX exit'

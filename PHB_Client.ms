@@ -123,20 +123,22 @@ struct PHB_JSON (
 
 struct PHB_KHClient (
     baseUrl = "https://www.kh-physicl.com",
-    -- Knowledge Hub folders shown in the gallery: #(label, folderId), in tab order.
+    -- Knowledge Hub folders shown in the sidebar: #(label, folderId), in sidebar order.
     -- folderId can also be an array of folderIds: their cards are shown together, folder by folder.
-    -- folderId undefined = section not wired to the Hub yet; its tab shows "Coming soon".
-    -- An optional third element gives categories: the tab loads every category folder and shows a
-    -- category list above the gallery. Either a parent folderId, whose subfolders become the
-    -- categories (read from the Hub at load time), or a fixed list #(#(label, folderId), ...).
+    -- folderId undefined = section not wired to the Hub yet; it shows "Coming soon".
+    -- An optional third element gives categories, shown as sub-items in the sidebar; the library
+    -- itself shows all of them. Either a parent folderId, whose subfolders become the categories
+    -- (read from the Hub at load time), or a fixed list #(#(label, folderId), ...).
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
-        -- Two folders under the same parent (1b736021-...) in one tab
-        #("Grass", #("4d7cebe9-23f1-4df5-9cea-dfd350e972e8", "2076619a-29d3-4f64-9da7-4b5efb90fe76")),
-        #("Buildings & Parts", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Library > ... > Buildings & Parts (parent 1b736021-...)
+        -- Three folders under the same parent (1b736021-...)
+        #("Models", undefined, #(
+            #("Buildings", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Buildings & Parts on the Hub
+            #("Grass", "4d7cebe9-23f1-4df5-9cea-dfd350e972e8"),
+            #("Hedges", "2076619a-29d3-4f64-9da7-4b5efb90fe76"))),
         -- Library > Textures: each subfolder (Bricks, Marble, Roof...) is a category
-        #("Textures", undefined, "5cb26050-1de7-4edc-8f18-917ae1b81e64")
+        #("Materials", undefined, "5cb26050-1de7-4edc-8f18-917ae1b81e64")
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 

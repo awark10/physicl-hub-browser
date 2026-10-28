@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- New layout: a library sidebar on the left replaces the tab row. Backplates, Decals, Models (Buildings, Grass, Hedges) and Materials (categories from the Hub) — clicking a library shows all of it and opens its sub-items, clicking a sub-item shows that category.
+- Textures is now called Materials; the Category dropdown is gone (categories live in the sidebar).
+- Search box with Find at the top right: filters the gallery by name as you type.
+- Tool buttons Add Camera, Add Sun, Add Render preset EXTR, Add Render preset PUB (placeholders, "coming soon").
+- Grass and hedges are separate categories under Models.
+
 ## 1.1.6
 
 - The installer registers the macro in the running 3ds Max (fileIn of the .mcr instead of macros.load, which takes a folder), so "Hub Browser" appears in Customize User Interface right after the first install, without a restart.
