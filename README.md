@@ -38,8 +38,10 @@ and continues from there as a separate project.
   as you type. Results show where each card comes from ("Materials > Roof"), previews are
   downloaded only for matches, and the sidebar is dimmed while results are shown. Clearing the box
   or clicking a sidebar item goes back to the selected library.
-- **Tool buttons:** Add Camera, Add Sun, Add Render preset EXTR / PUB are placeholders for now
-  ("coming soon"); each is an entry in `tools` in `PHB_UI.ms` waiting for its function.
+- **Tool buttons:** each is an entry in `tools` in `PHB_Client.ms` (caption, item name, Drive id of a
+  package zip). Add Camera imports the Physicl camera package like a Hub card (merge into the saved
+  scene, textures copied and relinked, result window). Add Sun and Add Render preset EXTR / PUB are
+  placeholders for now ("coming soon").
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)
   instead of the full preview (up to 100 MB), downloaded 8 at a time and cached in
   `Physicl_Hub_Browser_cache\thumbs`. The gallery is owner-drawn, three columns, sized to the screen.
@@ -64,4 +66,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.1 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.2 — see [CHANGELOG.md](CHANGELOG.md).

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+
+- Add Camera works: it downloads the Physicl camera package from Google Drive and imports it like a Hub card. The top bar buttons are defined in `tools` in PHB_Client.ms.
+
 ## 1.2.1
 
 - Search covers the whole Hub, not just the selected sidebar item: the first search loads every card list (once per session), results show their source ("Materials > Roof") and live filtering follows as you type. Previews are downloaded only for matches. Clearing the search or clicking the sidebar returns to the selected library.

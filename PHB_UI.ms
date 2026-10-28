@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.1"
+global PHB_version = "1.2.2"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -292,13 +292,6 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     local pool -- thumbnails made for search results: preview path -> Bitmap
     local sideW = 200 -- width of the library sidebar
 
-    -- Top bar tools: #(caption, function or undefined). A tool without a function says
-    -- "coming soon"; give it a function (fn with no arguments) to wire it.
-    local tools = #(
-        #("Add Camera", undefined),
-        #("Add Sun", undefined),
-        #("Add Render preset EXTR", undefined),
-        #("Add Render preset PUB", undefined))
 
     -- Positions below are for the full 1296x996 size; layout moves them for smaller screens
     dotNetControl lblTitle "System.Windows.Forms.Label" pos:[10,8] width:200 height:30
@@ -686,11 +679,13 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         )
     )
 
+    -- Top bar button t (PHB_kh.tools): imports its package like a Hub card, or "coming soon"
     fn runTool t = (
-        local f = tools[t][2]
-        if f == undefined then
-            messageBox (tools[t][1] + ": coming soon.") title:"Physicl Hub Browser"
-        else f()
+        local tool = PHB_kh.tools[t]
+        if tool[3] == undefined then
+            messageBox (tool[1] + ": coming soon.") title:"Physicl Hub Browser"
+        else
+            PHB_importBackground #(tool[2], undefined, tool[3])
     )
 
     fn importSelected = (
@@ -716,6 +711,10 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         lblTitle.ForeColor = light
         lblTitle.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 13.0
         lblTitle.Text = "Knowledge Hub Library"
+        -- Button captions come from PHB_kh.tools
+        local toolButtons = #(btnTool1, btnTool2, btnTool3, btnTool4)
+        for t = 1 to toolButtons.count do
+            if t <= PHB_kh.tools.count do toolButtons[t].text = PHB_kh.tools[t][1]
 
         tvLib.BackColor = dark
         tvLib.ForeColor = light

@@ -140,6 +140,14 @@ struct PHB_KHClient (
         -- Library > Textures: each subfolder (Bricks, Marble, Roof...) is a category
         #("Materials", undefined, "5cb26050-1de7-4edc-8f18-917ae1b81e64")
     ),
+    -- Top bar buttons: #(caption, item name, Drive id of the package zip). A button with a Drive
+    -- id imports that package like a Hub card (merge + textures); undefined = "coming soon".
+    tools = #(
+        #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),
+        #("Add Sun", "Sun", undefined),
+        #("Add Render preset EXTR", "Render preset EXTR", undefined),
+        #("Add Render preset PUB", "Render preset PUB", undefined)
+    ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
     cookies = undefined,
