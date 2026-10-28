@@ -41,7 +41,9 @@ and continues from there as a separate project.
 - **Tool buttons:** each is an entry in `tools` in `PHB_Client.ms` (caption, item name, Drive id of a
   package zip). Add Camera imports the Physicl camera package like a Hub card (merge into the saved
   scene, textures copied and relinked, result window), and Add Sun does the same with the sun package.
-  Add Render preset EXTR / PUB are placeholders for now ("coming soon").
+  Add Render preset EXTR / PUB download a zip of V-Ray render presets and load its .rps into the
+  production render settings (all categories); a warning follows if the renderer is not V-Ray (the
+  Physicl spec: V-Ray 5.10.03, 3ds Max 2022.3).
 - **Thumbnails:** Drive's server-side thumbnail (`drive.google.com/thumbnail?id=…&sz=w320`, ~60 KB)
   instead of the full preview (up to 100 MB), downloaded 8 at a time and cached in
   `Physicl_Hub_Browser_cache\thumbs`. The gallery is owner-drawn, three columns, sized to the screen.
@@ -66,4 +68,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.3 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.4 — see [CHANGELOG.md](CHANGELOG.md).

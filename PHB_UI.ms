@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.3"
+global PHB_version = "1.2.4"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -131,6 +131,37 @@ fn PHB_importBackground item = (
         msg += "\n\nThese textures were not found:\n"
         for m in missing do msg += m + "\n"
     )
+    messageBox msg title:"Physicl Hub Browser"
+    true
+)
+
+-- Downloads a package of V-Ray render presets (.rps) from Drive and loads the first one into the
+-- production render settings (all categories). The Physicl spec renders with V-Ray 5.10.03.
+fn PHB_applyPreset title fileId = (
+    progressStart ("Downloading " + title + "...")
+    local dir = PHB_kh.getPackage title fileId
+    progressEnd()
+    if dir == undefined do
+        return PHB_importFailed title PHB_kh.lastError
+    local presets = PHB_kh.findFiles dir "*.rps"
+    if presets.count == 0 do
+        return PHB_importFailed title "The package has no .rps render preset."
+    local preset = presets[1]
+    -- The Render Setup dialog shows stale values if it stays open while settings change
+    local wasOpen = renderSceneDialog.isOpen()
+    if wasOpen do renderSceneDialog.close()
+    local loaded = try (renderPresets.LoadAll 0 preset) catch (
+        format "Physicl Hub Browser: could not load % - %\n" preset (getCurrentException())
+        false
+    )
+    if wasOpen do renderSceneDialog.open()
+    if loaded == false do
+        return PHB_importFailed title ("3ds Max could not load the preset " + filenameFromPath preset + ".")
+    local renderer = (classOf renderers.production) as string
+    format "Physicl Hub Browser: render preset % loaded, renderer %\n" preset renderer
+    local msg = "Render preset applied: " + title + "\n" + filenameFromPath preset + "\nRenderer: " + renderer
+    if not matchPattern renderer pattern:"V_Ray*" do
+        msg += "\n\nThe renderer is not V-Ray. The Physicl spec needs V-Ray 5.10.03; check that it is installed."
     messageBox msg title:"Physicl Hub Browser"
     true
 )
@@ -682,10 +713,11 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Top bar button t (PHB_kh.tools): imports its package like a Hub card, or "coming soon"
     fn runTool t = (
         local tool = PHB_kh.tools[t]
-        if tool[3] == undefined then
-            messageBox (tool[1] + ": coming soon.") title:"Physicl Hub Browser"
-        else
-            PHB_importBackground #(tool[2], undefined, tool[3])
+        case of (
+            (tool[3] == undefined): messageBox (tool[1] + ": coming soon.") title:"Physicl Hub Browser"
+            (tool[4] == #preset): PHB_applyPreset tool[2] tool[3]
+            default: PHB_importBackground #(tool[2], undefined, tool[3])
+        )
     )
 
     fn importSelected = (

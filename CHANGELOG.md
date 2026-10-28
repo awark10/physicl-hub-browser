@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.4
+
+- Add Render preset EXTR and Add Render preset PUB work: each downloads its V-Ray preset (.rps) from Google Drive and loads it into the render settings, then reports the preset and the renderer (with a warning if it is not V-Ray).
+
 ## 1.2.3
 
 - Add Sun works the same way as Add Camera: it imports the Physicl sun package from Google Drive.

@@ -140,13 +140,15 @@ struct PHB_KHClient (
         -- Library > Textures: each subfolder (Bricks, Marble, Roof...) is a category
         #("Materials", undefined, "5cb26050-1de7-4edc-8f18-917ae1b81e64")
     ),
-    -- Top bar buttons: #(caption, item name, Drive id of the package zip). A button with a Drive
-    -- id imports that package like a Hub card (merge + textures); undefined = "coming soon".
+    -- Top bar buttons: #(caption, item name, Drive id of the package zip[, #preset]). A button with
+    -- a Drive id imports that package like a Hub card (merge + textures); with #preset the zip holds
+    -- V-Ray render presets (.rps) and the first one is loaded into the render settings.
+    -- Drive id undefined = "coming soon".
     tools = #(
         #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),
         #("Add Sun", "Sun", "1-OWeZQD53jryWFMM5wmW1hm1W70S-D9D"),
-        #("Add Render preset EXTR", "Render preset EXTR", undefined),
-        #("Add Render preset PUB", "Render preset PUB", undefined)
+        #("Add Render preset EXTR", "Render preset EXTR", "1V7DArMa1gcmx4F5nODu4m0rzrLCV1y2c", #preset), -- PRESET_EXT_01.rps
+        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset)    -- Phisicl-vray.rps
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
