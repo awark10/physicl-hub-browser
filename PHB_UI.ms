@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.4"
+global PHB_version = "1.2.5"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -157,10 +157,10 @@ fn PHB_applyPreset title fileId = (
     if wasOpen do renderSceneDialog.open()
     if loaded == false do
         return PHB_importFailed title ("3ds Max could not load the preset " + filenameFromPath preset + ".")
-    local renderer = (classOf renderers.production) as string
-    format "Physicl Hub Browser: render preset % loaded, renderer %\n" preset renderer
-    local msg = "Render preset applied: " + title + "\n" + filenameFromPath preset + "\nRenderer: " + renderer
-    if not matchPattern renderer pattern:"V_Ray*" do
+    local rendererClass = (classOf renderers.production) as string
+    format "Physicl Hub Browser: render preset % loaded, renderer %\n" preset rendererClass
+    local msg = "Render preset applied: " + title + "\n" + filenameFromPath preset + "\nRenderer: " + rendererClass
+    if not matchPattern rendererClass pattern:"V_Ray*" do
         msg += "\n\nThe renderer is not V-Ray. The Physicl spec needs V-Ray 5.10.03; check that it is installed."
     messageBox msg title:"Physicl Hub Browser"
     true
@@ -712,11 +712,11 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
 
     -- Top bar button t (PHB_kh.tools): imports its package like a Hub card, or "coming soon"
     fn runTool t = (
-        local tool = PHB_kh.tools[t]
+        local btn = PHB_kh.tools[t]
         case of (
-            (tool[3] == undefined): messageBox (tool[1] + ": coming soon.") title:"Physicl Hub Browser"
-            (tool[4] == #preset): PHB_applyPreset tool[2] tool[3]
-            default: PHB_importBackground #(tool[2], undefined, tool[3])
+            (btn[3] == undefined): messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser"
+            (btn[4] == #preset): PHB_applyPreset btn[2] btn[3]
+            default: PHB_importBackground #(btn[2], undefined, btn[3])
         )
     )
 

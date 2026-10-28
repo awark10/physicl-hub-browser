@@ -68,4 +68,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.4 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.5 — see [CHANGELOG.md](CHANGELOG.md).

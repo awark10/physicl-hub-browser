@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.5
+
+- Fix "Syntax error: at tool, expected name" when opening the dialog: `tool` is a reserved word in MAXScript and can't be a variable name.
+
 ## 1.2.4
 
 - Add Render preset EXTR and Add Render preset PUB work: each downloads its V-Ray preset (.rps) from Google Drive and loads it into the render settings, then reports the preset and the renderer (with a warning if it is not V-Ray).
