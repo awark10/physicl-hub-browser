@@ -27,7 +27,7 @@ and continues from there as a separate project.
   Materials). A library with categories has sub-items: clicking the library shows all of it and
   opens or closes the sub-items, clicking a sub-item shows only that category. Models has a fixed
   list (Buildings, Grass, Hedges); Materials takes its categories from the subfolders of
-  Library > Textures on the Hub, read from that Hub page (`GET /library/<id>`, there is no JSON call
+  Library > Textures on the Hub (plus Floor, a folder elsewhere on the Hub), read from that Hub page (`GET /library/<id>`, there is no JSON call
   for folders) on load and Refresh, so a new subfolder appears without a script update.
 - **Library:** `GET /api/library/cards?folderId=…` for every folder of the library returns the
   cards as JSON; only `published` cards are shown. Each library is kept in memory between switches
@@ -68,4 +68,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.5 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.6 — see [CHANGELOG.md](CHANGELOG.md).

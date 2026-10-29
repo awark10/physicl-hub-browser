@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.5"
+global PHB_version = "1.2.6"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -229,22 +229,30 @@ fn PHB_loadLibrary force:false = (
         return true
     )
     -- Categories from the subfolders of a parent folder, read again on every load/Refresh
-    local parent = PHB_kh.categoryParentOf PHB_library
-    if parent != undefined do (
-        local s = PHB_kh.fetchSubfolders parent
-        if s[1] == #unauthorized do (
-            if not (PHB_ensureLogin()) do return false
+    -- Categories: the subfolders of each parent folder (read again on every load/Refresh), then the
+    -- fixed entries of the library (Materials > Floor lives under another parent)
+    local parents = PHB_kh.categoryParentOf PHB_library
+    if parents != undefined do (
+        local cats = #()
+        local s, names
+        for parent in parents do (
             s = PHB_kh.fetchSubfolders parent
+            if s[1] == #unauthorized do (
+                if not (PHB_ensureLogin()) do return false
+                s = PHB_kh.fetchSubfolders parent
+            )
+            if s[1] != #ok do (
+                messageBox ("Could not load the categories:\n" + (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired")) title:"Physicl Hub Browser"
+                return false
+            )
+            names = #()
+            for c in s[2] do append names c[1]
+            format "Physicl Hub Browser: % categories in %: %\n" s[2].count parent names
+            -- No subfolders found (or the page changed): use the parent folder itself
+            if s[2].count > 0 then join cats s[2] else append cats #(PHB_kh.libraries[PHB_library][1], parent)
         )
-        if s[1] != #ok do (
-            messageBox ("Could not load the categories:\n" + (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired")) title:"Physicl Hub Browser"
-            return false
-        )
-        local names = #()
-        for c in s[2] do append names c[1]
-        format "Physicl Hub Browser: % categories in %: %\n" s[2].count parent names
-        -- No subfolders found (or the page changed): use the parent folder itself
-        PHB_catLists[PHB_library] = if s[2].count > 0 then s[2] else #(#(PHB_kh.libraries[PHB_library][1], parent))
+        join cats (PHB_kh.categoriesOf PHB_library)
+        PHB_catLists[PHB_library] = cats
     )
     local folders = PHB_kh.foldersOf PHB_library cats:(PHB_libCategories())
     if folders.count == 0 do (
@@ -415,7 +423,9 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
 
     -- (Re)creates the child nodes of library i from its categories; keeps the node's expanded state
     fn fillChildren node i = (
-        local cats = PHB_categoriesFor i
+        -- Until the Hub categories are read, show none (a fixed one like Floor would get another index)
+        local cats = if PHB_kh.categoryParentOf i != undefined and PHB_catLists[i] == undefined \
+            then #() else PHB_categoriesFor i
         node.Nodes.Clear()
         for c = 1 to cats.count do (
             local child = node.Nodes.Add cats[c][1]

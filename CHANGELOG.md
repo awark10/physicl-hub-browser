@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.6
+
+- Materials gets a Floor category (a Hub folder outside Library > Textures, listed after the Textures subfolders). A library can now mix parent folders and fixed folders in its category list.
+
 ## 1.2.5
 
 - Fix "Syntax error: at tool, expected name" when opening the dialog: `tool` is a reserved word in MAXScript and can't be a variable name.

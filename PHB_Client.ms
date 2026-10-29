@@ -128,7 +128,8 @@ struct PHB_KHClient (
     -- folderId undefined = section not wired to the Hub yet; it shows "Coming soon".
     -- An optional third element gives categories, shown as sub-items in the sidebar; the library
     -- itself shows all of them. Either a parent folderId, whose subfolders become the categories
-    -- (read from the Hub at load time), or a fixed list #(#(label, folderId), ...).
+    -- (read from the Hub at load time), or a list mixing such parent folderIds (strings) and fixed
+    -- entries #(label, folderId); fixed entries come after the subfolders.
     libraries = #(
         #("Backplates", "3d1e8a52-c530-4db5-b1af-7306c9a820d7"), -- Library > Backplates > Exterior scene Backplates
         #("Decals", "20f6b229-9912-4f83-b55f-55c30aef8a92"),      -- Library > Decals
@@ -137,8 +138,11 @@ struct PHB_KHClient (
             #("Buildings", "3b243d75-81a6-4a68-8546-0acb3e66924d"), -- Buildings & Parts on the Hub
             #("Grass", "4d7cebe9-23f1-4df5-9cea-dfd350e972e8"),
             #("Hedges", "2076619a-29d3-4f64-9da7-4b5efb90fe76"))),
-        -- Library > Textures: each subfolder (Bricks, Marble, Roof...) is a category
-        #("Materials", undefined, "5cb26050-1de7-4edc-8f18-917ae1b81e64")
+        -- Library > Textures: each subfolder (Bricks, Marble, Roof...) is a category; Floor is a folder
+        -- under another parent (d2e8adc1-...), added after them
+        #("Materials", undefined, #(
+            "5cb26050-1de7-4edc-8f18-917ae1b81e64",
+            #("Floor", "5cd7399c-3cf9-4c61-a49a-9ecbe2ea44c0")))
     ),
     -- Top bar buttons: #(caption, item name, Drive id of the package zip[, #preset]). A button with
     -- a Drive id imports that package like a Hub card (merge + textures); with #preset the zip holds
@@ -165,12 +169,23 @@ struct PHB_KHClient (
 
     -- Fixed category list of library i (empty when it has none or reads them from the Hub)
     fn categoriesOf i = (
-        if libraries[i].count >= 3 and classOf libraries[i][3] == Array then libraries[i][3] else #()
+        local result = #()
+        if libraries[i].count >= 3 and classOf libraries[i][3] == Array do
+            for c in libraries[i][3] where classOf c == Array do append result c
+        result
     ),
 
-    -- Parent folderId whose subfolders are the categories of library i, or undefined
+    -- Parent folderIds whose subfolders are categories of library i (read from the Hub), or
+    -- undefined when it has none
     fn categoryParentOf i = (
-        if libraries[i].count >= 3 and classOf libraries[i][3] == String then libraries[i][3] else undefined
+        local result = #()
+        if libraries[i].count >= 3 do (
+            local spec = libraries[i][3]
+            if classOf spec == String then append result spec
+            else if classOf spec == Array do
+                for c in spec where classOf c == String do append result c
+        )
+        if result.count == 0 then undefined else result
     ),
 
     -- Folders to fetch for library i: #(#(folderId, category index), ...); category 0 = no list.
