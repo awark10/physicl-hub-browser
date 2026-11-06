@@ -147,7 +147,7 @@ struct PHB_KHClient (
     -- Top bar buttons: #(caption, item name, Drive id of the package zip[, #preset or #script]). A button with
     -- a Drive id imports that package like a Hub card (merge + textures); with #preset the zip holds
     -- V-Ray render presets (.rps) and the first one is loaded into the render settings; with #script
-    -- the package's own *.ms runs after the merge (scene helpers LIGHT/LIGHT_GRP/ROOM_LIGHT are reused).
+    -- the package's own *.ms runs after the merge (the lights go under ROOM_LIGHT when the scene has it).
     -- Drive id undefined = "coming soon".
     tools = #(
         #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),

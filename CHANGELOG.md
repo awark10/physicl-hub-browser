@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.9
+
+- Add Day Light in a scene without LIGHT / LIGHT_GRP / ROOM_LIGHT: the lights stay at the top (Compass001 > Daylight001 > Sun001, sky); the helpers are no longer created. With the helpers present, the lights go under ROOM_LIGHT as before.
+
 ## 1.2.8
 
 - Only the Add Day Light button (marked #script in tools) runs its package's setup script; Hub cards and the other buttons never run scripts.

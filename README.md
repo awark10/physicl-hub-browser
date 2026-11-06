@@ -43,7 +43,9 @@ and continues from there as a separate project.
   scene, textures copied and relinked, result window), and Add Sun does the same with the sun package.
   Add Day Light imports the Daylight + VRayDome package (Day_Light_System) and then runs the
   package's own `*.ms` to set up the scene. Only buttons marked `#script` in `tools` run a package
-  script (Hub cards never do); existing LIGHT / LIGHT_GRP / ROOM_LIGHT helpers are reused, not merged again.
+  script (Hub cards never do). If the scene has LIGHT / LIGHT_GRP / ROOM_LIGHT, the lights go under
+  ROOM_LIGHT (no copies merged); if it has none, they stay at the top: Compass001 > Daylight001 >
+  Sun001, and sky.
   Add Render preset EXTR / PUB download a zip of V-Ray render presets and load its .rps into the
   production render settings (all categories); a warning follows if the renderer is not V-Ray (the
   Physicl spec: V-Ray 5.10.03, 3ds Max 2022.3).
@@ -71,4 +73,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.8 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.9 — see [CHANGELOG.md](CHANGELOG.md).

@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.8"
+global PHB_version = "1.2.9"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -111,11 +111,15 @@ fn PHB_importBackground item runScript:false = (
     local names = getMAXFileObjectNames maxFile
     local toMerge = for n in names where matchPattern n pattern:(title + "*") collect n
     if toMerge.count == 0 do toMerge = names
-    -- Scene helpers the setup script parents the lights under: an existing one is reused, not
-    -- merged again (no LIGHT001 copies); a missing one comes from the package or the script makes it
+    -- Scene helpers the setup script parents the lights under (LIGHT > LIGHT_GRP > ROOM_LIGHT): they
+    -- are never merged from the package (no LIGHT001 copies). When the scene has them, the lights go
+    -- under ROOM_LIGHT; when it has none, the lights stay at the top (Compass001 > Daylight001 >
+    -- Sun001, sky) and whatever helpers the script creates are removed again below.
+    local helpers = #("LIGHT", "LIGHT_GRP", "ROOM_LIGHT", "NIGHT_LIGHT")
+    local helpersBefore = #()
     if runScript do (
-        local helpers = #("LIGHT", "LIGHT_GRP", "ROOM_LIGHT", "NIGHT_LIGHT")
-        toMerge = for n in toMerge where findItem helpers n == 0 or getNodeByName n == undefined collect n
+        helpersBefore = for n in helpers where getNodeByName n != undefined collect n
+        toMerge = for n in toMerge where findItem helpers n == 0 collect n
     )
 
     try (
@@ -133,6 +137,17 @@ fn PHB_importBackground item runScript:false = (
         if postScripts.count > 0 do (
             try (fileIn postScripts[1]) catch (
                 format "Physicl Hub Browser: setup script failed - %\n" (getCurrentException())
+            )
+        )
+        -- Helpers the script created in a scene that had none: drop them, their children stay at the top
+        local h, kids
+        for n in helpers where findItem helpersBefore n == 0 do (
+            h = getNodeByName n
+            if h != undefined do (
+                kids = #()
+                for c in h.children do append kids c
+                for k in kids do k.parent = undefined
+                delete h
             )
         )
         -- The script may delete merged objects (the standard skylight, the replaced sun)
