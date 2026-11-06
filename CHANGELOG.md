@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.10
+
+- The setup script gets the nodes just merged (global PHB_mergedNodes), so Add Day Light configures the new Daylight even when the scene already has another one. Needs the updated Sim_Day_Light.zip on Drive (its setup script reads PHB_mergedNodes).
+
 ## 1.2.9
 
 - Add Day Light in a scene without LIGHT / LIGHT_GRP / ROOM_LIGHT: the lights stay at the top (Compass001 > Daylight001 > Sun001, sky); the helpers are no longer created. With the helpers present, the lights go under ROOM_LIGHT as before.

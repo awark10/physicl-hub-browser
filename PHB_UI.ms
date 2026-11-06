@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.9"
+global PHB_version = "1.2.10"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -15,6 +15,7 @@ global PHB_mainRollout
 global PHB_cache
 if PHB_cache == undefined do PHB_cache = #()
 global PHB_loginRollout
+global PHB_mergedNodes -- nodes of the package being imported, for its setup script (Add Day Light)
 global PHB_category -- per library: selected entry of the category list (1 = All)
 if PHB_category == undefined do PHB_category = #()
 global PHB_catLists -- per library: categories read from the Hub, #(#(name, folderId), ...)
@@ -135,9 +136,12 @@ fn PHB_importBackground item runScript:false = (
     if runScript do (
         local postScripts = PHB_kh.findFiles dir "*.ms"
         if postScripts.count > 0 do (
+            -- The script works on what was just merged (the new Daylight, not an older one in the scene)
+            PHB_mergedNodes = objs
             try (fileIn postScripts[1]) catch (
                 format "Physicl Hub Browser: setup script failed - %\n" (getCurrentException())
             )
+            PHB_mergedNodes = undefined
         )
         -- Helpers the script created in a scene that had none: drop them, their children stay at the top
         local h, kids
