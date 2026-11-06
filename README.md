@@ -41,6 +41,9 @@ and continues from there as a separate project.
 - **Tool buttons:** each is an entry in `tools` in `PHB_Client.ms` (caption, item name, Drive id of a
   package zip). Add Camera imports the Physicl camera package like a Hub card (merge into the saved
   scene, textures copied and relinked, result window), and Add Sun does the same with the sun package.
+  Add Day Light imports the Daylight + VRayDome package (Day_Light_System) and then runs the
+  package's own `*.ms` to set up the scene. Only buttons marked `#script` in `tools` run a package
+  script (Hub cards never do); existing LIGHT / LIGHT_GRP / ROOM_LIGHT helpers are reused, not merged again.
   Add Render preset EXTR / PUB download a zip of V-Ray render presets and load its .rps into the
   production render settings (all categories); a warning follows if the renderer is not V-Ray (the
   Physicl spec: V-Ray 5.10.03, 3ds Max 2022.3).
@@ -68,4 +71,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.6 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.8 — see [CHANGELOG.md](CHANGELOG.md).

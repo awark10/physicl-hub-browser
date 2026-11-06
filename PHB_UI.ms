@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.6"
+global PHB_version = "1.2.8"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -88,7 +88,9 @@ fn PHB_importFailed title reason = (
     false
 )
 
-fn PHB_importBackground item = (
+-- runScript: the package's own setup script (*.ms) runs after the merge. Only top bar buttons
+-- marked #script in PHB_kh.tools (Add Day Light) do this; Hub cards never run scripts.
+fn PHB_importBackground item runScript:false = (
     local title = item[1]
     if maxFilePath == "" do
         return PHB_importFailed title "Please save the scene first: textures are copied next to the .max file."
@@ -109,6 +111,12 @@ fn PHB_importBackground item = (
     local names = getMAXFileObjectNames maxFile
     local toMerge = for n in names where matchPattern n pattern:(title + "*") collect n
     if toMerge.count == 0 do toMerge = names
+    -- Scene helpers the setup script parents the lights under: an existing one is reused, not
+    -- merged again (no LIGHT001 copies); a missing one comes from the package or the script makes it
+    if runScript do (
+        local helpers = #("LIGHT", "LIGHT_GRP", "ROOM_LIGHT", "NIGHT_LIGHT")
+        toMerge = for n in toMerge where findItem helpers n == 0 or getNodeByName n == undefined collect n
+    )
 
     try (
         mergeMAXFile maxFile toMerge #select #autoRenameDups
@@ -118,6 +126,18 @@ fn PHB_importBackground item = (
     local objs = selection as array
     if objs.count == 0 do
         return PHB_importFailed title "No objects were merged from the package."
+
+    -- Setup script shipped in the package (Sim_Day_Light_setup.ms for Add Day Light)
+    if runScript do (
+        local postScripts = PHB_kh.findFiles dir "*.ms"
+        if postScripts.count > 0 do (
+            try (fileIn postScripts[1]) catch (
+                format "Physicl Hub Browser: setup script failed - %\n" (getCurrentException())
+            )
+        )
+        -- The script may delete merged objects (the standard skylight, the replaced sun)
+        objs = for o in objs where isValidNode o collect o
+    )
 
     local tex = PHB_localizeTextures objs dir
     local missing = tex[2]
@@ -338,6 +358,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     button btnTool2 "Add Sun" pos:[336,8] width:100 height:28
     button btnTool3 "Add Render preset EXTR" pos:[442,8] width:170 height:28
     button btnTool4 "Add Render preset PUB" pos:[618,8] width:170 height:28
+    button btnTool5 "Add Day Light" pos:[794,8] width:110 height:28
     dotNetControl tbSearch "System.Windows.Forms.TextBox" pos:[990,11] width:200 height:22
     button btnFind "Find" pos:[1196,8] width:90 height:28
     dotNetControl tvLib "System.Windows.Forms.TreeView" pos:[10,44] width:200 height:882
@@ -363,7 +384,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         btnLogout.pos = [w - 106, y + 23]
         btnFind.pos = [w - 100, 8]
         -- The search box takes what is left right of the tool buttons (up to 200 px)
-        local searchW = amax 100 (amin 200 (w - 106 - 798))
+        local searchW = amax 100 (amin 200 (w - 106 - 914))
         tbSearch.width = searchW
         tbSearch.pos = [w - 106 - searchW, 11]
         local scrollW = (dotNetClass "System.Windows.Forms.SystemInformation").VerticalScrollBarWidth
@@ -726,7 +747,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         case of (
             (btn[3] == undefined): messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser"
             (btn[4] == #preset): PHB_applyPreset btn[2] btn[3]
-            default: PHB_importBackground #(btn[2], undefined, btn[3])
+            default: PHB_importBackground #(btn[2], undefined, btn[3]) runScript:(btn[4] == #script)
         )
     )
 
@@ -754,7 +775,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         lblTitle.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 13.0
         lblTitle.Text = "Knowledge Hub Library"
         -- Button captions come from PHB_kh.tools
-        local toolButtons = #(btnTool1, btnTool2, btnTool3, btnTool4)
+        local toolButtons = #(btnTool1, btnTool2, btnTool3, btnTool4, btnTool5)
         for t = 1 to toolButtons.count do
             if t <= PHB_kh.tools.count do toolButtons[t].text = PHB_kh.tools[t][1]
 
@@ -793,6 +814,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     on btnTool2 pressed do runTool 2
     on btnTool3 pressed do runTool 3
     on btnTool4 pressed do runTool 4
+    on btnTool5 pressed do runTool 5
     -- Typing searches live once every list is in memory; until then Enter or Find loads them
     on tbSearch TextChanged s e do (
         if trimLeft (trimRight tbSearch.Text) == "" then (if searching do endSearch())

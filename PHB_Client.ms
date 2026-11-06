@@ -144,15 +144,20 @@ struct PHB_KHClient (
             "5cb26050-1de7-4edc-8f18-917ae1b81e64",
             #("Floor", "5cd7399c-3cf9-4c61-a49a-9ecbe2ea44c0")))
     ),
-    -- Top bar buttons: #(caption, item name, Drive id of the package zip[, #preset]). A button with
+    -- Top bar buttons: #(caption, item name, Drive id of the package zip[, #preset or #script]). A button with
     -- a Drive id imports that package like a Hub card (merge + textures); with #preset the zip holds
-    -- V-Ray render presets (.rps) and the first one is loaded into the render settings.
+    -- V-Ray render presets (.rps) and the first one is loaded into the render settings; with #script
+    -- the package's own *.ms runs after the merge (scene helpers LIGHT/LIGHT_GRP/ROOM_LIGHT are reused).
     -- Drive id undefined = "coming soon".
     tools = #(
         #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),
         #("Add Sun", "Sun", "1-OWeZQD53jryWFMM5wmW1hm1W70S-D9D"),
         #("Add Render preset EXTR", "Render preset EXTR", "1V7DArMa1gcmx4F5nODu4m0rzrLCV1y2c", #preset), -- PRESET_EXT_01.rps
-        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset)    -- Phisicl-vray.rps
+        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset),   -- Phisicl-vray.rps
+        -- Daylight + VRayDome lighting: merges Compass001/Daylight001/Sun001/sky and runs the package's
+        -- Sim_Day_Light_setup.ms (#script: only marked buttons run a package script, see PHB_importBackground).
+        -- The item name must not start with "Sun".
+        #("Add Day Light", "Day_Light_System", "17xo0O3l36HDBq4Q8hYHxGT8kSiogvhT3", #script)
     ),
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.8
+
+- Only the Add Day Light button (marked #script in tools) runs its package's setup script; Hub cards and the other buttons never run scripts.
+- Add Day Light reuses the scene's LIGHT / LIGHT_GRP / ROOM_LIGHT / NIGHT_LIGHT helpers instead of merging copies (LIGHT001...); missing ones come from the package or are created by the script.
+- Objects deleted by the setup script are skipped afterwards (no "deleted scene object" error).
+
+## 1.2.7
+
+- Add Day Light: a fifth top bar button imports the Daylight + VRayDome lighting package (Day_Light_System card: Compass001, Daylight001, Sun001 as VRaySun, VRayLight sky). The sun parameters, Environment Map = None, parenting under ROOM_LIGHT and disabling of other VRaySuns are done by the package's own `Sim_Day_Light_setup.ms`.
+- Packages can now ship a post-setup script: after the merge the hub runs the first `*.ms` found in the package (`PHB_importBackground`). Packages without an .ms (backgrounds, decals, Camera, Sun) behave as before.
+- The search box leaves room for the fifth button.
+
 ## 1.2.6
 
 - Materials gets a Floor category (a Hub folder outside Library > Textures, listed after the Textures subfolders). A library can now mix parent folders and fixed folders in its category list.
