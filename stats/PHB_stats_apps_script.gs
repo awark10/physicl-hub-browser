@@ -4,21 +4,22 @@
 //   After changing the code: Deploy > Manage deployments > Edit > Version: New version > Deploy (URL stays).
 //
 // The hub POSTs JSON: {"type": "login" | "asset" | "button", "value": "<email | card title | button name>"}
-// Sheet2 keeps one row per (type, value) with a counter: Type | Value | Count. No dates, no versions.
+// Sheet2 layout (row 1 = headers, user's design 2026-11-10):
+//   A: users (each email once)   B: button  C: count   D: asset  E: count
 
 var STATS_SHEET = 'Sheet2';
-var ALLOWED = { login: true, asset: true, button: true };
+var COLS = { login: [1, 0], button: [2, 3], asset: [4, 5] }; // [value column, count column (0 = none)]
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
     var d = JSON.parse(e.postData.contents);
     var type = String(d.type || '').toLowerCase();
-    if (!ALLOWED[type]) return out_('ignored');
+    var c = COLS[type];
     var value = String(d.value || '').slice(0, 200);
-    if (!value) return out_('ignored');
+    if (!c || !value) return out_('ignored');
     lock.waitLock(10000);
-    count_(sheet_(), type, value, 1);
+    bump_(sheet_(), c[0], c[1], value);
     return out_('ok');
   } catch (err) {
     return out_('error');
@@ -27,26 +28,33 @@ function doPost(e) {
   }
 }
 
-// Adds n to the counter of (type, value), creating the row if needed
-function count_(sh, type, value, n) {
-  var last = sh.getLastRow();
-  if (last > 1) {
-    var rows = sh.getRange(2, 1, last - 1, 3).getValues();
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i][0] === type && String(rows[i][1]) === value) {
-        sh.getRange(i + 2, 3).setValue((Number(rows[i][2]) || 0) + n);
-        return;
+// Finds value in column vc (rows 2..); adds 1 to its count in column cc, or writes it in the
+// first empty row of that column with count 1. cc = 0: just keep the value once (users).
+function bump_(sh, vc, cc, value) {
+  var last = Math.max(sh.getLastRow(), 1);
+  var vals = last > 1 ? sh.getRange(2, vc, last - 1, 1).getValues() : [];
+  var empty = -1;
+  for (var i = 0; i < vals.length; i++) {
+    var v = String(vals[i][0]);
+    if (v === value) {
+      if (cc) {
+        var cell = sh.getRange(i + 2, cc);
+        cell.setValue((Number(cell.getValue()) || 0) + 1);
       }
+      return;
     }
+    if (v === '' && empty < 0) empty = i;
   }
-  sh.appendRow([type, value, n]);
+  var row = empty >= 0 ? empty + 2 : last + 1;
+  sh.getRange(row, vc).setValue(value);
+  if (cc) sh.getRange(row, cc).setValue(1);
 }
 
 function sheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(STATS_SHEET) || ss.insertSheet(STATS_SHEET);
   if (sh.getLastRow() === 0) {
-    sh.appendRow(['Type', 'Value', 'Count']);
+    sh.getRange(1, 1, 1, 5).setValues([['users', 'button', 'count', 'asset', 'count']]);
     sh.setFrozenRows(1);
   }
   return sh;
@@ -54,22 +62,4 @@ function sheet_() {
 
 function out_(s) {
   return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
-}
-
-// Run once from the editor after switching to counters: turns the old event rows
-// (Time | Type | Value | Hub version) into counters and drops the test rows.
-function migrateToCounters() {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(STATS_SHEET);
-  if (!sh) return;
-  var head = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0];
-  if (String(head[0]) !== 'Time') return; // already counters
-  var rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues() : [];
-  sh.clear();
-  sheet_();
-  rows.forEach(function (r) {
-    var type = String(r[1]).toLowerCase(), value = String(r[2]), ver = String(r[3]);
-    if (ALLOWED[type] && value && ver !== 'test') count_(sh, type, value, 1);
-  });
-  var summary = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Summary');
-  if (summary) SpreadsheetApp.getActiveSpreadsheet().deleteSheet(summary);
 }
