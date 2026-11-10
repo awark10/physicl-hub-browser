@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.12
+
+- Self update: on opening, the hub reads the releases sheet (Google Sheet "Physicl Hub Browser": version, mzp_link, date, notes; public, read as CSV). When it lists a newer version with a link, an "Update to v..." button appears under the sidebar; it downloads the .mzp (or a zip holding it) from Drive, runs its installer and reopens the hub.
+
 ## 1.2.11
 
 - The top bar buttons take their file from their Hub card (library Ext1, a0299616-...): the published card with the same title (Camera, Sun, EXT_Preset, Day_Light_System). Replacing the file on the card updates the button for everybody, and the new Drive id also refreshes the local package cache. The built-in Drive ids stay as a fallback (no connection, or no such card, e.g. Render preset PUB).

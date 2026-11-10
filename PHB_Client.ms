@@ -163,6 +163,8 @@ struct PHB_KHClient (
     -- card whose title equals its card name (tools[i][2]), so replacing the file on the card updates
     -- the button for everybody; the Drive id in tools is only the fallback (offline / no such card).
     toolsFolder = "a0299616-3584-46df-adc4-50512c983eac", -- Hub library 8d867a9e-... > Ext1
+    -- Google Sheet with the releases (see SELF UPDATE)
+    updateSheet = "1RiUkloDFkU_NYzJ46pG6854cfRPqnWjT9QcwloajJfQ",
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
     cookies = undefined,
@@ -579,5 +581,86 @@ struct PHB_KHClient (
     fn findFiles dir pattern = (
         local opt = (dotNetClass "System.IO.SearchOption").AllDirectories
         (dotNetClass "System.IO.Directory").GetFiles dir pattern opt
+    ),
+
+    -- ============================
+    -- SELF UPDATE
+    -- Google Sheet "Physicl Hub Browser" (public, read as CSV): columns version, mzp_link, date, notes.
+    -- The row with the highest version that has a link is the latest release; mzp_link is a Drive
+    -- link to the .mzp (or to a zip holding it).
+    -- ============================
+
+    -- -1 / 0 / 1 for "1.2.10" vs "1.2.11"
+    fn compareVersions a b = (
+        local pa = filterString a "."
+        local pb = filterString b "."
+        local na, nb
+        for i = 1 to (amax pa.count pb.count) do (
+            na = if i <= pa.count then (try (pa[i] as integer) catch (0)) else 0
+            nb = if i <= pb.count then (try (pb[i] as integer) catch (0)) else 0
+            if na == undefined do na = 0
+            if nb == undefined do nb = 0
+            if na < nb do return -1
+            if na > nb do return 1
+        )
+        0
+    ),
+
+    -- #(version, link) of the latest release, or undefined (no answer within 5 s, no rows)
+    fn latestRelease = (
+        -- Locals declared up front ("Bad free thunk", see downloadMany)
+        local t, h, f, v, l
+        local text = try (
+            t = dl.GetStringAsync ("https://docs.google.com/spreadsheets/d/" + updateSheet + "/export?format=csv&gid=0")
+            if t.Wait 5000 then t.Result else undefined
+        ) catch (undefined)
+        if text == undefined do return undefined
+        local lines = filterString text "\r\n"
+        if lines.count < 2 do return undefined
+        local head = filterString lines[1] "," splitEmptyTokens:true
+        local cv = 0, cl = 0
+        for i = 1 to head.count do (
+            h = toLower (trimLeft (trimRight head[i]))
+            if h == "version" do cv = i
+            if h == "mzp_link" do cl = i
+        )
+        if cv == 0 or cl == 0 do return undefined
+        local best = undefined
+        for k = 2 to lines.count do (
+            f = filterString lines[k] "," splitEmptyTokens:true
+            if f.count >= (amax cv cl) do (
+                v = trimLeft (trimRight f[cv])
+                l = trimLeft (trimRight f[cl])
+                if v != "" and l != "" and (best == undefined or compareVersions v best[1] > 0) do best = #(v, l)
+            )
+        )
+        best
+    ),
+
+    -- Downloads the release and runs its installer (which copies the files into userMacros).
+    -- Returns true, or false with lastError set.
+    fn installUpdate link version = (
+        local fid = driveId link
+        if fid == undefined do (lastError = "The update link is not a Google Drive link: " + link; return false)
+        local dir = cacheDir + "update_" + version + "\\"
+        try ((dotNetClass "System.IO.Directory").Delete dir true) catch ()
+        local pkg = cacheDir + "update_" + version + ".zip"
+        if doesFileExist pkg do deleteFile pkg
+        if not (downloadDrive fid pkg) do return false
+        local zf = dotNetClass "System.IO.Compression.ZipFile"
+        local inst
+        try (
+            zf.ExtractToDirectory pkg dir
+            deleteFile pkg
+            -- a zip may hold the .mzp itself (Notion "last version" link); an .mzp is a zip too
+            for m in (findFiles dir "*.mzp") do zf.ExtractToDirectory m (dir + "mzp\\")
+            inst = findFiles dir "Install_PhysiclHubBrowser.ms"
+            if inst.count == 0 do (lastError = "The update package has no Install_PhysiclHubBrowser.ms."; return false)
+            fileIn inst[1]
+            true
+        ) catch (
+            lastError = "Update failed: " + (getCurrentException())
+            false
+        )
     )
 )

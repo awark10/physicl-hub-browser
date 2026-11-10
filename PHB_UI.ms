@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.11"
+global PHB_version = "1.2.12"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -386,6 +386,9 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     button btnRefresh "Refresh" pos:[220,949] width:96 height:31
     button btnImport "IMPORT SELECTED" width:240 height:48 pos:[633,937]
     button btnLogout "Sign out" pos:[1190,949] width:96 height:31
+    -- Shown only when the releases sheet lists a newer version (checkUpdate)
+    button btnUpdate "Update" pos:[10,949] width:200 height:31
+    local PHB_update = undefined -- #(version, link) of the newer release
 
     -- Fits the controls to the dialog size picked by PHB_dialogSize. Fewer rows show on a lower
     -- screen; on a narrower one the thumbnails shrink so a row still holds three.
@@ -401,6 +404,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         btnRefresh.pos = [listX, y + 23]
         btnImport.pos = [listX + (listW - 240) / 2, y + 11]
         btnLogout.pos = [w - 106, y + 23]
+        btnUpdate.pos = [10, y + 23] -- under the sidebar, clear of IMPORT on narrow screens
         btnFind.pos = [w - 100, 8]
         -- The search box takes what is left right of the tool buttons (up to 200 px)
         local searchW = amax 100 (amin 200 (w - 106 - 914))
@@ -769,6 +773,28 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         else PHB_importBackground #(btn[2], undefined, fid) runScript:(btn[4] == #script)
     )
 
+    -- Self update: the releases sheet (PHB_kh.updateSheet) is read once per opening; a newer
+    -- version shows the Update button
+    fn checkUpdate = (
+        PHB_update = try (PHB_kh.latestRelease()) catch (undefined)
+        if PHB_update != undefined and (PHB_kh.compareVersions PHB_update[1] PHB_version) > 0 then (
+            btnUpdate.text = "Update to v" + PHB_update[1]
+            btnUpdate.visible = true
+        ) else btnUpdate.visible = false
+    )
+
+    fn runUpdate = (
+        if PHB_update == undefined do return false
+        if not (queryBox ("Install Physicl Hub Browser v" + PHB_update[1] + "?\n(now v" + PHB_version + ")") title:"Physicl Hub Browser") do return false
+        progressStart ("Downloading v" + PHB_update[1] + "...")
+        local ok = PHB_kh.installUpdate PHB_update[2] PHB_update[1]
+        progressEnd()
+        if not ok do return (messageBox ("Update failed:\n" + PHB_kh.lastError) title:"Physicl Hub Browser")
+        -- reopen with the new files
+        destroyDialog PHB_mainRollout
+        macros.run "PHYSICL" "PhysiclHubBrowser"
+    )
+
     fn importSelected = (
         if lvBackgrounds.SelectedItems.Count == 0 do (
             messageBox "Please select an item first." title:"Info"
@@ -792,6 +818,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         lblTitle.ForeColor = light
         lblTitle.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 13.0
         lblTitle.Text = "Knowledge Hub Library"
+        btnUpdate.visible = false -- checkUpdate shows it
         -- Button captions come from PHB_kh.tools
         local toolButtons = #(btnTool1, btnTool2, btnTool3, btnTool4, btnTool5)
         for t = 1 to toolButtons.count do
@@ -819,6 +846,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         buildTree()
         selectNode()
         fillList()
+        checkUpdate()
     )
 
     on PHB_mainRollout close do (
@@ -861,6 +889,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     on btnImport pressed do importSelected()
     on lvBackgrounds DoubleClick s a do importSelected()
     on lvBackgrounds DrawItem s e do (try (drawItem e) catch (e.DrawDefault = true))
+    on btnUpdate pressed do runUpdate()
     on btnLogout pressed do (
         PHB_kh.logout()
         PHB_items = #()
