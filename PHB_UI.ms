@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.14"
+global PHB_version = "1.2.15"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -97,7 +97,7 @@ fn PHB_importBackground item runScript:false = (
         return PHB_importFailed title "Please save the scene first: textures are copied next to the .max file."
 
     progressStart ("Downloading " + title + "...")
-    local dir = PHB_kh.getPackage title item[3]
+    local dir = PHB_kh.getPackage title item[3] stamp:(if item.count >= 4 then item[4] else "")
     progressEnd()
     if dir == undefined do
         return PHB_importFailed title PHB_kh.lastError
@@ -176,9 +176,9 @@ fn PHB_importBackground item runScript:false = (
 
 -- Downloads a package of V-Ray render presets (.rps) from Drive and loads the first one into the
 -- production render settings (all categories). The Physicl spec renders with V-Ray 5.10.03.
-fn PHB_applyPreset title fileId = (
+fn PHB_applyPreset title fileId stamp:"" = (
     progressStart ("Downloading " + title + "...")
-    local dir = PHB_kh.getPackage title fileId
+    local dir = PHB_kh.getPackage title fileId stamp:stamp
     progressEnd()
     if dir == undefined do
         return PHB_importFailed title PHB_kh.lastError
@@ -770,8 +770,8 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         if btn[3] == undefined do return (messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser")
         PHB_kh.track "button" btn[1]
         local fid = PHB_kh.toolFileId t -- the file on the button's Hub card (falls back to btn[3])
-        if btn[4] == #preset then PHB_applyPreset btn[2] fid
-        else PHB_importBackground #(btn[2], undefined, fid) runScript:(btn[4] == #script)
+        if btn[4] == #preset then PHB_applyPreset btn[2] fid stamp:PHB_kh.toolStamp
+        else PHB_importBackground #(btn[2], undefined, fid, PHB_kh.toolStamp) runScript:(btn[4] == #script)
     )
 
     -- Self update: the releases sheet (PHB_kh.updateSheet) is read once per opening; a newer

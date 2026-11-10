@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.15
+
+- Package cache names include the card's updatedAt, so a package replaced on Drive under the same id (Manage versions) is downloaded again once its Hub card is saved. Before, a cached package was never refreshed unless the Drive id changed.
+
 ## 1.2.14
 
 - Usage statistics: the hub sends small background events to a Google Apps Script web app (stats/PHB_stats_apps_script.gs) that writes them to Sheet2 of the releases sheet: each sign-in (Knowledge Hub email), each imported card (title only) and each top bar button click (name only). Sending never waits and never shows errors.

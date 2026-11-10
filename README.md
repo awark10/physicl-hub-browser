@@ -73,4 +73,4 @@ is left as it is and can be removed by hand.
 
 ## Version
 
-v1.2.14 — see [CHANGELOG.md](CHANGELOG.md).
+v1.2.15 — see [CHANGELOG.md](CHANGELOG.md).

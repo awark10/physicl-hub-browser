@@ -164,6 +164,7 @@ struct PHB_KHClient (
     -- Hub folder with the cards of the top bar buttons. A button takes the Drive file of the published
     -- card whose title equals its card name (tools[i][2]), so replacing the file on the card updates
     -- the button for everybody; the Drive id in tools is only the fallback (offline / no such card).
+    toolStamp = "", -- updatedAt of the card found by the last toolFileId
     toolsFolder = "a0299616-3584-46df-adc4-50512c983eac", -- Hub library 8d867a9e-... > Ext1
     -- Google Sheet with the releases (see SELF UPDATE)
     updateSheet = "1RiUkloDFkU_NYzJ46pG6854cfRPqnWjT9QcwloajJfQ",
@@ -376,6 +377,16 @@ struct PHB_KHClient (
 
     fn byTitle a b = stricmp a[1] b[1],
 
+    -- Card "updatedAt" as digits (20261110193157): part of the package cache name, so a file
+    -- replaced on Drive (same id, Manage versions) is fetched again once the card is saved
+    fn cardStamp s = (
+        if s == undefined do return ""
+        -- locals up front ("Bad free thunk", see downloadMany)
+        local str = s as string, r = "", ch
+        for i = 1 to (amin 19 str.count) do (ch = str[i]; if ch >= "0" and ch <= "9" do r += ch)
+        r
+    ),
+
     -- /api/library/cards JSON -> sorted array of #(title, previewFileId, packageFileId)
     -- .NET parser (System.Web.Extensions, always present with .NET Framework 4.8 in Max 2022).
     -- The MAXScript reader is quadratic on long strings: ~1 min for the 105 decal cards.
@@ -399,7 +410,7 @@ struct PHB_KHClient (
                 local title = field c "title"
                 local dId = driveId (field c "downloadUrl")
                 if title != undefined and dId != undefined do
-                    append items #(title, driveId (field c "previewImageUrl"), dId)
+                    append items #(title, driveId (field c "previewImageUrl"), dId, cardStamp (field c "updatedAt"))
             )
         )
         lastStats = (cards.count as string) + " cards, " + (published as string) + " published, " + (items.count as string) + " shown"
@@ -423,7 +434,7 @@ struct PHB_KHClient (
                 local title = json.get c "title"
                 local dId = driveId (json.get c "downloadUrl")
                 if title != undefined and dId != undefined do
-                    append items #(title, driveId (json.get c "previewImageUrl"), dId)
+                    append items #(title, driveId (json.get c "previewImageUrl"), dId, cardStamp (json.get c "updatedAt"))
             )
         )
         lastStats = if cards == undefined then "no \"cards\" in the answer" else \
@@ -455,9 +466,10 @@ struct PHB_KHClient (
     -- Drive file of top bar button i: from its Hub card (toolsFolder), else the built-in id
     fn toolFileId i = (
         local btn = tools[i]
+        toolStamp = ""
         local res = fetchCards toolsFolder
         if res[1] == #ok do (
-            for it in res[2] where stricmp it[1] btn[2] == 0 do return it[3]
+            for it in res[2] where stricmp it[1] btn[2] == 0 do (toolStamp = it[4]; return it[3])
             format "Physicl Hub Browser: no published card \"%\" in the tools folder, using the built-in file\n" btn[2]
         )
         if res[1] != #ok do format "Physicl Hub Browser: tools folder not read (% %), using the built-in file for %\n" res[1] lastError btn[1]
@@ -578,8 +590,9 @@ struct PHB_KHClient (
     fn previewUrl fileId = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w320",
 
     -- Downloads and unpacks the background package; returns the folder or undefined
-    fn getPackage title fileId = (
+    fn getPackage title fileId stamp:"" = (
         local base = cacheDir + "packages\\" + (safeName title) + "_" + fileId
+        if stamp != undefined and stamp != "" do base += "_" + stamp
         local zip = base + ".zip"
         local dir = base + "\\"
         if doesDirectoryExist dir do return dir
