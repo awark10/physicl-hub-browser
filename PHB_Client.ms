@@ -152,13 +152,17 @@ struct PHB_KHClient (
     tools = #(
         #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),
         #("Add Sun", "Sun", "1-OWeZQD53jryWFMM5wmW1hm1W70S-D9D"),
-        #("Add Render preset EXTR", "Render preset EXTR", "1V7DArMa1gcmx4F5nODu4m0rzrLCV1y2c", #preset), -- PRESET_EXT_01.rps
-        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset),   -- Phisicl-vray.rps
+        #("Add Render preset EXTR", "EXT_Preset", "1V7DArMa1gcmx4F5nODu4m0rzrLCV1y2c", #preset), -- PRESET_EXT_01.rps
+        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset),   -- Phisicl-vray.rps (no Hub card yet)
         -- Daylight + VRayDome lighting: merges Compass001/Daylight001/Sun001/sky and runs the package's
         -- Sim_Day_Light_setup.ms (#script: only marked buttons run a package script, see PHB_importBackground).
         -- The item name must not start with "Sun".
         #("Add Day Light", "Day_Light_System", "17xo0O3l36HDBq4Q8hYHxGT8kSiogvhT3", #script)
     ),
+    -- Hub folder with the cards of the top bar buttons. A button takes the Drive file of the published
+    -- card whose title equals its card name (tools[i][2]), so replacing the file on the card updates
+    -- the button for everybody; the Drive id in tools is only the fallback (offline / no such card).
+    toolsFolder = "a0299616-3584-46df-adc4-50512c983eac", -- Hub library 8d867a9e-... > Ext1
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
     cookies = undefined,
@@ -427,6 +431,18 @@ struct PHB_KHClient (
             lastError = "Network error: " + (getCurrentException())
             #(#error, #())
         )
+    ),
+
+    -- Drive file of top bar button i: from its Hub card (toolsFolder), else the built-in id
+    fn toolFileId i = (
+        local btn = tools[i]
+        local res = fetchCards toolsFolder
+        if res[1] == #ok do (
+            for it in res[2] where stricmp it[1] btn[2] == 0 do return it[3]
+            format "Physicl Hub Browser: no published card \"%\" in the tools folder, using the built-in file\n" btn[2]
+        )
+        if res[1] != #ok do format "Physicl Hub Browser: tools folder not read (% %), using the built-in file for %\n" res[1] lastError btn[1]
+        btn[3]
     ),
 
     -- Subfolders of a Hub folder, read from its library page (the Hub has no JSON call for them):

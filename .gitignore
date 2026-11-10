@@ -5,3 +5,6 @@
 *.tmp
 # Built packages (build_mzp.ps1)
 dist/
+
+# Megascans test assets (Fab Standard License, not for redistribution)
+megascans_test/

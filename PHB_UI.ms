@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.10"
+global PHB_version = "1.2.11"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -763,11 +763,10 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Top bar button t (PHB_kh.tools): imports its package like a Hub card, or "coming soon"
     fn runTool t = (
         local btn = PHB_kh.tools[t]
-        case of (
-            (btn[3] == undefined): messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser"
-            (btn[4] == #preset): PHB_applyPreset btn[2] btn[3]
-            default: PHB_importBackground #(btn[2], undefined, btn[3]) runScript:(btn[4] == #script)
-        )
+        if btn[3] == undefined do return (messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser")
+        local fid = PHB_kh.toolFileId t -- the file on the button's Hub card (falls back to btn[3])
+        if btn[4] == #preset then PHB_applyPreset btn[2] fid
+        else PHB_importBackground #(btn[2], undefined, fid) runScript:(btn[4] == #script)
     )
 
     fn importSelected = (
