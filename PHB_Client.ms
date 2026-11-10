@@ -150,14 +150,16 @@ struct PHB_KHClient (
     -- the package's own *.ms runs after the merge (the lights go under ROOM_LIGHT when the scene has it).
     -- Drive id undefined = "coming soon".
     tools = #(
+        -- Order = button order left to right (btnTool1..5 in PHB_UI.ms)
         #("Add Camera", "Camera", "1A4IHTetUo181D-XviO1qz7Lx8LIgQACp"),
-        #("Add Sun", "Sun", "1-OWeZQD53jryWFMM5wmW1hm1W70S-D9D"),
-        #("Add Render preset EXTR", "EXT_Preset", "1V7DArMa1gcmx4F5nODu4m0rzrLCV1y2c", #preset), -- PRESET_EXT_01.rps
-        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset),   -- Phisicl-vray.rps (no Hub card yet)
         -- Daylight + VRayDome lighting: merges Compass001/Daylight001/Sun001/sky and runs the package's
         -- Sim_Day_Light_setup.ms (#script: only marked buttons run a package script, see PHB_importBackground).
         -- The item name must not start with "Sun".
-        #("Add Day Light", "Day_Light_System", "17xo0O3l36HDBq4Q8hYHxGT8kSiogvhT3", #script)
+        #("Add Day Light", "Day_Light_System", "17xo0O3l36HDBq4Q8hYHxGT8kSiogvhT3", #script),
+        #("Add Render preset PUB", "Render preset PUB", "1555IPwAE3MMKG_ePsgahb9uirY-gLrw5", #preset),   -- Phisicl-vray.rps (no Hub card yet)
+        #("Add Render preset EXTR", "EXT_Preset", "1V7DArMa1gcmx4F5nODu4m0rzrLCV1y2c", #preset), -- PRESET_EXT_01.rps
+        -- Hidden since v1.2.13 (Add Day Light replaces it); btnTool5 is not shown
+        #("Add Sun", "Sun", "1-OWeZQD53jryWFMM5wmW1hm1W70S-D9D")
     ),
     -- Hub folder with the cards of the top bar buttons. A button takes the Drive file of the published
     -- card whose title equals its card name (tools[i][2]), so replacing the file on the card updates

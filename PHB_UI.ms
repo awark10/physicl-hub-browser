@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.12"
+global PHB_version = "1.2.13"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -374,10 +374,10 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Positions below are for the full 1296x996 size; layout moves them for smaller screens
     dotNetControl lblTitle "System.Windows.Forms.Label" pos:[10,8] width:200 height:30
     button btnTool1 "Add Camera" pos:[230,8] width:100 height:28
-    button btnTool2 "Add Sun" pos:[336,8] width:100 height:28
-    button btnTool3 "Add Render preset EXTR" pos:[442,8] width:170 height:28
-    button btnTool4 "Add Render preset PUB" pos:[618,8] width:170 height:28
-    button btnTool5 "Add Day Light" pos:[794,8] width:110 height:28
+    button btnTool2 "Add Day Light" pos:[336,8] width:110 height:28
+    button btnTool3 "Add Render preset PUB" pos:[452,8] width:170 height:28
+    button btnTool4 "Add Render preset EXTR" pos:[628,8] width:170 height:28
+    button btnTool5 "Add Sun" pos:[804,8] width:100 height:28 -- hidden (see open)
     dotNetControl tbSearch "System.Windows.Forms.TextBox" pos:[990,11] width:200 height:22
     button btnFind "Find" pos:[1196,8] width:90 height:28
     dotNetControl tvLib "System.Windows.Forms.TreeView" pos:[10,44] width:200 height:882
@@ -407,7 +407,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         btnUpdate.pos = [10, y + 23] -- under the sidebar, clear of IMPORT on narrow screens
         btnFind.pos = [w - 100, 8]
         -- The search box takes what is left right of the tool buttons (up to 200 px)
-        local searchW = amax 100 (amin 200 (w - 106 - 914))
+        local searchW = amax 100 (amin 200 (w - 106 - 808))
         tbSearch.width = searchW
         tbSearch.pos = [w - 106 - searchW, 11]
         local scrollW = (dotNetClass "System.Windows.Forms.SystemInformation").VerticalScrollBarWidth
@@ -823,6 +823,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         local toolButtons = #(btnTool1, btnTool2, btnTool3, btnTool4, btnTool5)
         for t = 1 to toolButtons.count do
             if t <= PHB_kh.tools.count do toolButtons[t].text = PHB_kh.tools[t][1]
+        btnTool5.visible = false -- Add Sun is hidden
 
         tvLib.BackColor = dark
         tvLib.ForeColor = light

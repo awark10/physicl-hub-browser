@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.13
+
+- Top bar order: Add Camera, Add Day Light, Add Render preset PUB, Add Render preset EXTR. Add Sun is hidden.
+
 ## 1.2.12
 
 - Self update: on opening, the hub reads the releases sheet (Google Sheet "Physicl Hub Browser": version, mzp_link, date, notes; public, read as CSV). When it lists a newer version with a link, an "Update to v..." button appears under the sidebar; it downloads the .mzp (or a zip holding it) from Drive, runs its installer and reopens the hub.
