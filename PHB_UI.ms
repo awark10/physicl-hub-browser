@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.13"
+global PHB_version = "1.2.14"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -768,6 +768,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     fn runTool t = (
         local btn = PHB_kh.tools[t]
         if btn[3] == undefined do return (messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser")
+        PHB_kh.track "button" btn[1]
         local fid = PHB_kh.toolFileId t -- the file on the button's Hub card (falls back to btn[3])
         if btn[4] == #preset then PHB_applyPreset btn[2] fid
         else PHB_importBackground #(btn[2], undefined, fid) runScript:(btn[4] == #script)
@@ -801,7 +802,9 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
             return false
         )
         local idx = (lvBackgrounds.SelectedItems.Item[0]).Index + 1
-        PHB_importBackground galleryItems[idx]
+        local ok = PHB_importBackground galleryItems[idx]
+        if ok == true do PHB_kh.track "asset" galleryItems[idx][1]
+        ok
     )
 
     on PHB_mainRollout open do (

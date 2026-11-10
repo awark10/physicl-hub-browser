@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.14
+
+- Usage statistics: the hub sends small background events to a Google Apps Script web app (stats/PHB_stats_apps_script.gs) that writes them to Sheet2 of the releases sheet: each sign-in (Knowledge Hub email), each imported card (title only) and each top bar button click (name only). Sending never waits and never shows errors.
+
 ## 1.2.13
 
 - Top bar order: Add Camera, Add Day Light, Add Render preset PUB, Add Render preset EXTR. Add Sun is hidden.

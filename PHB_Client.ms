@@ -167,6 +167,9 @@ struct PHB_KHClient (
     toolsFolder = "a0299616-3584-46df-adc4-50512c983eac", -- Hub library 8d867a9e-... > Ext1
     -- Google Sheet with the releases (see SELF UPDATE)
     updateSheet = "1RiUkloDFkU_NYzJ46pG6854cfRPqnWjT9QcwloajJfQ",
+    -- Usage statistics: Apps Script web app writing to Sheet2 of the releases sheet
+    -- (stats/PHB_stats_apps_script.gs). Events: login (email), asset (card title), button (name).
+    statsUrl = "https://script.google.com/macros/s/AKfycbyD57ksR2_EffDOI2KipDNBhctJ7UDPzqI4YP-QhQWgt--VjWAIHlPpz6omhbU_yBVddw/exec",
     cacheDir = (getDir #userMacros) + "\\Physicl_Hub_Browser_cache\\",
 
     cookies = undefined,
@@ -319,6 +322,17 @@ struct PHB_KHClient (
     -- ============================
 
     -- Returns true on success; on failure lastError holds the message for the user
+    -- Usage statistics: one event to statsUrl, sent in the background (never waits, never fails)
+    fn track type value = (
+        try (
+            local ver = try (::PHB_version as string) catch ("")
+            local body = "{\"type\":" + (json.quote type) + ",\"value\":" + (json.quote (value as string)) + ",\"version\":" + (json.quote ver) + "}"
+            local content = dotNetObject "System.Net.Http.StringContent" body (dotNetClass "System.Text.Encoding").UTF8 "application/json"
+            dl.PostAsync statsUrl content -- not awaited
+        ) catch ()
+        ok
+    ),
+
     fn login email password remember:true = (
         lastError = ""
         try (
@@ -331,6 +345,7 @@ struct PHB_KHClient (
                 if remember then saveSession() else (
                     if doesFileExist (sessionFile()) do deleteFile (sessionFile())
                 )
+                track "login" email
                 true
             ) else (
                 local msg = try (json.get (json.parse text) "error") catch (undefined)
