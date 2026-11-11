@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.15"
+global PHB_version = "1.2.16"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -387,7 +387,8 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     button btnImport "IMPORT SELECTED" width:240 height:48 pos:[633,937]
     button btnLogout "Sign out" pos:[1190,949] width:96 height:31
     -- Shown only when the releases sheet lists a newer version (checkUpdate)
-    button btnUpdate "Update" pos:[10,949] width:200 height:31
+    -- .NET button: a MAXScript button cannot have a bigger font or a colour
+    dotNetControl btnUpdate "System.Windows.Forms.Button" pos:[10,944] width:200 height:40
     local PHB_update = undefined -- #(version, link) of the newer release
 
     -- Fits the controls to the dialog size picked by PHB_dialogSize. Fewer rows show on a lower
@@ -404,7 +405,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         btnRefresh.pos = [listX, y + 23]
         btnImport.pos = [listX + (listW - 240) / 2, y + 11]
         btnLogout.pos = [w - 106, y + 23]
-        btnUpdate.pos = [10, y + 23] -- under the sidebar, clear of IMPORT on narrow screens
+        btnUpdate.pos = [10, y + 18] -- under the sidebar, clear of IMPORT on narrow screens
         btnFind.pos = [w - 100, 8]
         -- The search box takes what is left right of the tool buttons (up to 200 px)
         local searchW = amax 100 (amin 200 (w - 106 - 808))
@@ -779,9 +780,9 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     fn checkUpdate = (
         PHB_update = try (PHB_kh.latestRelease()) catch (undefined)
         if PHB_update != undefined and (PHB_kh.compareVersions PHB_update[1] PHB_version) > 0 then (
-            btnUpdate.text = "Update to v" + PHB_update[1]
-            btnUpdate.visible = true
-        ) else btnUpdate.visible = false
+            btnUpdate.Text = "Update HUB Browser"
+            btnUpdate.Visible = true
+        ) else btnUpdate.Visible = false
     )
 
     fn runUpdate = (
@@ -821,7 +822,13 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         lblTitle.ForeColor = light
         lblTitle.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 13.0
         lblTitle.Text = "Knowledge Hub Library"
-        btnUpdate.visible = false -- checkUpdate shows it
+        btnUpdate.Visible = false -- checkUpdate shows it
+        btnUpdate.FlatStyle = (dotNetClass "System.Windows.Forms.FlatStyle").Flat
+        btnUpdate.FlatAppearance.BorderSize = 0
+        btnUpdate.BackColor = drawingColor.FromArgb 59 196 206
+        btnUpdate.ForeColor = drawingColor.FromArgb 255 255 255
+        btnUpdate.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 11.0 (dotNetClass "System.Drawing.FontStyle").Bold
+        btnUpdate.Cursor = (dotNetClass "System.Windows.Forms.Cursors").Hand
         -- Button captions come from PHB_kh.tools
         local toolButtons = #(btnTool1, btnTool2, btnTool3, btnTool4, btnTool5)
         for t = 1 to toolButtons.count do
@@ -893,7 +900,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     on btnImport pressed do importSelected()
     on lvBackgrounds DoubleClick s a do importSelected()
     on lvBackgrounds DrawItem s e do (try (drawItem e) catch (e.DrawDefault = true))
-    on btnUpdate pressed do runUpdate()
+    on btnUpdate Click s e do runUpdate()
     on btnLogout pressed do (
         PHB_kh.logout()
         PHB_items = #()

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.16
+
+- The update button says "Update HUB Browser" (no version number) in large bold white text on a teal button.
+
 ## 1.2.15
 
 - Package cache names include the card's updatedAt, so a package replaced on Drive under the same id (Manage versions) is downloaded again once its Hub card is saved. Before, a cached package was never refreshed unless the Drive id changed.
