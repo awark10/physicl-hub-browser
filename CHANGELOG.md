@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.17
+
+- Fix: without a newer release the update button showed as an empty white box (a hosted .NET control hidden with Visible = false leaves its host window white). The button now stays but blends into the dialog (no text, background colour, disabled).
+
 ## 1.2.16
 
 - The update button says "Update HUB Browser" (no version number) in large bold white text on a teal button.

@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.16"
+global PHB_version = "1.2.17"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -781,8 +781,16 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         PHB_update = try (PHB_kh.latestRelease()) catch (undefined)
         if PHB_update != undefined and (PHB_kh.compareVersions PHB_update[1] PHB_version) > 0 then (
             btnUpdate.Text = "Update HUB Browser"
-            btnUpdate.Visible = true
-        ) else btnUpdate.Visible = false
+            btnUpdate.BackColor = (dotNetClass "System.Drawing.Color").FromArgb 59 196 206
+            btnUpdate.Enabled = true
+        ) else (
+            -- A hosted .NET control left with Visible = false shows as a white box, so the
+            -- button stays but blends into the dialog: no text, background colour, disabled
+            local bg = (colorMan.getColor #background) * 255
+            btnUpdate.Text = ""
+            btnUpdate.BackColor = (dotNetClass "System.Drawing.Color").FromArgb (bg.x as integer) (bg.y as integer) (bg.z as integer)
+            btnUpdate.Enabled = false
+        )
     )
 
     fn runUpdate = (
@@ -822,7 +830,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         lblTitle.ForeColor = light
         lblTitle.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 13.0
         lblTitle.Text = "Knowledge Hub Library"
-        btnUpdate.Visible = false -- checkUpdate shows it
+        btnUpdate.Text = "" -- checkUpdate fills it in when a newer release exists
         btnUpdate.FlatStyle = (dotNetClass "System.Windows.Forms.FlatStyle").Flat
         btnUpdate.FlatAppearance.BorderSize = 0
         btnUpdate.BackColor = drawingColor.FromArgb 59 196 206
