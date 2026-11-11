@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.17"
+global PHB_version = "1.2.18"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -97,7 +97,7 @@ fn PHB_importBackground item runScript:false = (
         return PHB_importFailed title "Please save the scene first: textures are copied next to the .max file."
 
     progressStart ("Downloading " + title + "...")
-    local dir = PHB_kh.getPackage title item[3] stamp:(if item.count >= 4 then item[4] else "")
+    local dir = PHB_kh.getPackage title item[3] stamp:(if item.count >= 5 and item[5] != undefined then item[5] else "")
     progressEnd()
     if dir == undefined do
         return PHB_importFailed title PHB_kh.lastError
@@ -313,7 +313,7 @@ fn PHB_loadLibrary force:false = (
         )
         if r[1] == #ok then (
             format "Physicl Hub Browser: % folder %: %\n" PHB_kh.libraries[PHB_library][1] f[1] PHB_kh.lastStats
-            for it in r[2] do append items (append it f[2])
+            for it in r[2] do (it[4] = f[2]; append items it)
             loaded += 1
         ) else errors += (if PHB_kh.lastError != "" then PHB_kh.lastError else "Session expired") + "\n"
     )
@@ -552,7 +552,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     fn sourceName lib item = (
         local name = PHB_kh.libraries[lib][1]
         local cats = PHB_categoriesFor lib
-        if item.count >= 4 and item[4] > 0 and item[4] <= cats.count do name += " > " + cats[item[4]][1]
+        if item.count >= 4 and item[4] != undefined and item[4] > 0 and item[4] <= cats.count do name += " > " + cats[item[4]][1]
         name
     )
 
@@ -772,7 +772,7 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
         PHB_kh.track "button" btn[1]
         local fid = PHB_kh.toolFileId t -- the file on the button's Hub card (falls back to btn[3])
         if btn[4] == #preset then PHB_applyPreset btn[2] fid stamp:PHB_kh.toolStamp
-        else PHB_importBackground #(btn[2], undefined, fid, PHB_kh.toolStamp) runScript:(btn[4] == #script)
+        else PHB_importBackground #(btn[2], undefined, fid, undefined, PHB_kh.toolStamp) runScript:(btn[4] == #script)
     )
 
     -- Self update: the releases sheet (PHB_kh.updateSheet) is read once per opening; a newer

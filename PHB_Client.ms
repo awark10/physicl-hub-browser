@@ -387,7 +387,8 @@ struct PHB_KHClient (
         r
     ),
 
-    -- /api/library/cards JSON -> sorted array of #(title, previewFileId, packageFileId)
+    -- /api/library/cards JSON -> sorted array of #(title, previewFileId, packageFileId, category, cardStamp)
+    -- (item[4] = category index, set by PHB_loadLibrary; item[5] = card updatedAt digits)
     -- .NET parser (System.Web.Extensions, always present with .NET Framework 4.8 in Max 2022).
     -- The MAXScript reader is quadratic on long strings: ~1 min for the 105 decal cards.
     fn parseCardsNet text = (
@@ -410,7 +411,7 @@ struct PHB_KHClient (
                 local title = field c "title"
                 local dId = driveId (field c "downloadUrl")
                 if title != undefined and dId != undefined do
-                    append items #(title, driveId (field c "previewImageUrl"), dId, cardStamp (field c "updatedAt"))
+                    append items #(title, driveId (field c "previewImageUrl"), dId, undefined, cardStamp (field c "updatedAt"))
             )
         )
         lastStats = (cards.count as string) + " cards, " + (published as string) + " published, " + (items.count as string) + " shown"
@@ -434,7 +435,7 @@ struct PHB_KHClient (
                 local title = json.get c "title"
                 local dId = driveId (json.get c "downloadUrl")
                 if title != undefined and dId != undefined do
-                    append items #(title, driveId (json.get c "previewImageUrl"), dId, cardStamp (json.get c "updatedAt"))
+                    append items #(title, driveId (json.get c "previewImageUrl"), dId, undefined, cardStamp (json.get c "updatedAt"))
             )
         )
         lastStats = if cards == undefined then "no \"cards\" in the answer" else \
@@ -469,7 +470,7 @@ struct PHB_KHClient (
         toolStamp = ""
         local res = fetchCards toolsFolder
         if res[1] == #ok do (
-            for it in res[2] where stricmp it[1] btn[2] == 0 do (toolStamp = it[4]; return it[3])
+            for it in res[2] where stricmp it[1] btn[2] == 0 do (toolStamp = it[5]; return it[3])
             format "Physicl Hub Browser: no published card \"%\" in the tools folder, using the built-in file\n" btn[2]
         )
         if res[1] != #ok do format "Physicl Hub Browser: tools folder not read (% %), using the built-in file for %\n" res[1] lastError btn[1]

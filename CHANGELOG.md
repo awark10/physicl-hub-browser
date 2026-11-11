@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.18
+
+- Fix (regression in 1.2.15): categories (Materials > Water, Models > Grass ...) showed 0 items. The card date was stored where the gallery keeps the category; it now has its own slot (item[5]).
+
 ## 1.2.17
 
 - Fix: without a newer release the update button showed as an empty white box (a hosted .NET control hidden with Visible = false leaves its host window white). The button now stays but blends into the dialog (no text, background colour, disabled).
