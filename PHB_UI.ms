@@ -2,7 +2,7 @@
 -- Evaluated at global scope by the macroScript (PhysiclHubBrowser.mcr); needs PHB_Client.ms loaded first.
 
 -- Shown in the dialog title; bumped with every change (keep the installer's version in step)
-global PHB_version = "1.2.18"
+global PHB_version = "1.2.19"
 
 global PHB_kh
 global PHB_items = #() -- #(title, previewFileId, packageFileId)
@@ -89,6 +89,22 @@ fn PHB_importFailed title reason = (
     false
 )
 
+-- Add Day Light replaces the lighting already in the scene instead of adding a second system: deletes
+-- every Daylight system (Compass + DaylightAssemblyHead), every VRaySun and every VRay dome light
+-- (the sky). Helpers such as ROOM_LIGHT stay. Returns the number of deleted nodes.
+fn PHB_removeDayLight = (
+    local old = #(), c
+    for o in objects do (
+        c = classOf o
+        if c == Compass or c == DaylightAssemblyHead or c == VRaySun or \
+            (c == VRayLight and (try (o.type == 1) catch false)) do append old o
+    )
+    -- Deleting a Daylight head can take its Sun along, so skip nodes that are already gone
+    for o in old where isValidNode o do delete o
+    if old.count > 0 do format "Physicl Hub Browser: removed % old lighting node(s)\n" old.count
+    old.count
+)
+
 -- runScript: the package's own setup script (*.ms) runs after the merge. Only top bar buttons
 -- marked #script in PHB_kh.tools (Add Day Light) do this; Hub cards never run scripts.
 fn PHB_importBackground item runScript:false = (
@@ -122,6 +138,10 @@ fn PHB_importBackground item runScript:false = (
         helpersBefore = for n in helpers where getNodeByName n != undefined collect n
         toMerge = for n in toMerge where findItem helpers n == 0 collect n
     )
+
+    -- Only one lighting system per scene: the old one is replaced, so the new lights keep the
+    -- package names (Compass001 > Daylight001 > Sun001, sky) instead of Compass002 ...
+    if runScript do undo "Add Day Light" on PHB_removeDayLight()
 
     try (
         mergeMAXFile maxFile toMerge #select #autoRenameDups
