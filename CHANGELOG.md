@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.19
+
+- Add Day Light replaces the scene's light system instead of adding a second one: after the package is downloaded, every Daylight system (with its Compass and sun), every other VRaySun (also the old Add Sun's VRaySun_01) and every dome VRayLight is deleted, then the new Day Light is merged (so it keeps the names Compass001 / Daylight001 / Sun001 / sky). Other VRayLights (lamps, portals) stay.
+
 ## 1.2.18
 
 - Fix (regression in 1.2.15): categories (Materials > Water, Models > Grass ...) showed 0 items. The card date was stored where the gallery keeps the category; it now has its own slot (item[5]).
