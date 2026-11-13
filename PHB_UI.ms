@@ -89,6 +89,22 @@ fn PHB_importFailed title reason = (
     false
 )
 
+-- Add Day Light replaces the lighting already in the scene instead of adding a second system: deletes
+-- every Daylight system (Compass + DaylightAssemblyHead), every VRaySun and every VRay dome light
+-- (the sky). Helpers such as ROOM_LIGHT stay. Returns the number of deleted nodes.
+fn PHB_removeDayLight = (
+    local old = #(), c
+    for o in objects do (
+        c = classOf o
+        if c == Compass or c == DaylightAssemblyHead or c == VRaySun or \
+            (c == VRayLight and (try (o.type == 1) catch false)) do append old o
+    )
+    -- Deleting a Daylight head can take its Sun along, so skip nodes that are already gone
+    for o in old where isValidNode o do delete o
+    if old.count > 0 do format "Physicl Hub Browser: removed % old lighting node(s)\n" old.count
+    old.count
+)
+
 -- runScript: the package's own setup script (*.ms) runs after the merge. Only top bar buttons
 -- marked #script in PHB_kh.tools (Add Day Light) do this; Hub cards never run scripts.
 fn PHB_importBackground item runScript:false = (
@@ -122,6 +138,10 @@ fn PHB_importBackground item runScript:false = (
         helpersBefore = for n in helpers where getNodeByName n != undefined collect n
         toMerge = for n in toMerge where findItem helpers n == 0 collect n
     )
+
+    -- Only one lighting system per scene: the old one is replaced, so the new lights keep the
+    -- package names (Compass001 > Daylight001 > Sun001, sky) instead of Compass002 ...
+    if runScript do undo "Add Day Light" on PHB_removeDayLight()
 
     try (
         mergeMAXFile maxFile toMerge #select #autoRenameDups
@@ -176,28 +196,6 @@ fn PHB_importBackground item runScript:false = (
 
 -- Downloads a package of V-Ray render presets (.rps) from Drive and loads the first one into the
 -- production render settings (all categories). The Physicl spec renders with V-Ray 5.10.03.
--- Add Day Light replaces the scene's light system instead of adding a second one: deletes every
--- Daylight system (head, its Compass, its sun), every other VRaySun (also the old Add Sun's
--- VRaySun_01) and every dome VRayLight. Other VRayLights (lamps, portals) stay.
--- Returns the names of the deleted nodes.
-fn PHB_removeLightSystem = (
-    local old = #()
-    local o, c
-    for o in objects where (classOf o) == DaylightAssemblyHead do (
-        appendIfUnique old o
-        for c in o.children do appendIfUnique old c
-        if o.parent != undefined and (classOf o.parent) == Compass do appendIfUnique old o.parent
-    )
-    for o in objects where (classOf o) == VRaySun do appendIfUnique old o
-    for o in objects where (classOf o) == VRayLight and (try (o.type == 1) catch (false)) do appendIfUnique old o
-    for o in objects where (classOf o) == Compass and o.children.count == 0 do appendIfUnique old o
-    local names = for o in old collect o.name
-    -- children that are not part of the light system (if any) stay in the scene, unparented
-    for o in old where isValidNode o do (for c in o.children where findItem old c == 0 do c.parent = undefined)
-    for o in old where isValidNode o do (try (delete o) catch ())
-    names
-)
-
 fn PHB_applyPreset title fileId stamp:"" = (
     progressStart ("Downloading " + title + "...")
     local dir = PHB_kh.getPackage title fileId stamp:stamp
@@ -790,22 +788,11 @@ rollout PHB_mainRollout "Physicl Hub Browser" width:1296 height:996
     -- Top bar button t (PHB_kh.tools): imports its package like a Hub card, or "coming soon"
     fn runTool t = (
         local btn = PHB_kh.tools[t]
-        local gone -- locals up front ("Bad free thunk" in rollout functions)
         if btn[3] == undefined do return (messageBox (btn[1] + ": coming soon.") title:"Physicl Hub Browser")
         PHB_kh.track "button" btn[1]
         local fid = PHB_kh.toolFileId t -- the file on the button's Hub card (falls back to btn[3])
         if btn[4] == #preset then PHB_applyPreset btn[2] fid stamp:PHB_kh.toolStamp
-        else (
-            -- Add Day Light: only one light system per scene. The package is downloaded first, so a
-            -- failed download never leaves the scene without its old light.
-            if btn[4] == #script do (
-                if (PHB_kh.getPackage btn[2] fid stamp:PHB_kh.toolStamp) == undefined do
-                    return (PHB_importFailed btn[2] PHB_kh.lastError)
-                gone = PHB_removeLightSystem()
-                if gone.count > 0 do format "Physicl Hub Browser: replaced the light system, deleted %\n" gone
-            )
-            PHB_importBackground #(btn[2], undefined, fid, undefined, PHB_kh.toolStamp) runScript:(btn[4] == #script)
-        )
+        else PHB_importBackground #(btn[2], undefined, fid, undefined, PHB_kh.toolStamp) runScript:(btn[4] == #script)
     )
 
     -- Self update: the releases sheet (PHB_kh.updateSheet) is read once per opening; a newer
